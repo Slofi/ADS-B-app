@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADS-B</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+
+<!-- Header -->
+<header id="header">
+  <div class="header-left">
+    <span class="app-title">✈ ADS-B</span>
+    <span class="status-dot" id="d1090-dot" title="dump1090"></span>
+    <span class="header-stat" id="stat-count">0 aircraft</span>
+    <span class="header-sep">·</span>
+    <span class="header-stat" id="stat-farthest"></span>
+  </div>
+  <div class="header-right">
+    <button class="hdr-btn" id="rings-btn" onclick="toggleRings()" title="Range rings">⊙</button>
+    <button class="hdr-btn" id="gear-btn" onclick="toggleSettings()" title="Settings">⚙</button>
+  </div>
+</header>
+
+<!-- Main layout -->
+<div id="main">
+  <div id="map"></div>
+
+  <!-- Right panel -->
+  <div id="panel">
+    <div class="panel-tabs">
+      <button class="tab-btn active" id="tab-active" onclick="switchTab('active')">Active <span id="badge-active" class="tab-badge">0</span></button>
+      <button class="tab-btn" id="tab-history" onclick="switchTab('history')">History <span id="badge-history" class="tab-badge">0</span></button>
+    </div>
+    <div id="ac-list"></div>
+  </div>
+</div>
+
+<!-- Aircraft popup -->
+<div id="popup" class="popup hidden">
+  <div class="popup-header">
+    <div class="popup-title">
+      <span id="pop-flight" class="pop-flight"></span>
+      <span id="pop-reg" class="pop-reg"></span>
+    </div>
+    <button class="popup-close" onclick="closePopup()">✕</button>
+  </div>
+  <div id="pop-type" class="pop-type"></div>
+  <div class="pop-grid" id="pop-grid"></div>
+  <div class="pop-btns">
+    <button class="pop-btn" onclick="centerOnSelected()">⊕ Center</button>
+    <button class="pop-btn" id="follow-btn" onclick="toggleFollow()">▶ Follow</button>
+  </div>
+  <div id="pop-emergency" class="pop-emergency hidden">⚠ EMERGENCY SQUAWK</div>
+</div>
+
+<!-- Settings panel -->
+<div id="settings" class="settings hidden">
+  <div class="settings-title">Settings</div>
+
+  <div class="set-section">dump1090</div>
+  <div class="set-row">
+    <span>Status</span>
+    <div style="display:flex;gap:6px">
+      <button class="set-btn" onclick="d1090Action('start')">Start</button>
+      <button class="set-btn" onclick="d1090Action('restart')">Restart</button>
+      <button class="set-btn danger" onclick="d1090Action('stop')">Stop</button>
+    </div>
+  </div>
+
+  <div class="set-section">Aircraft DB</div>
+  <div class="set-row">
+    <span id="db-version-label">Loading…</span>
+    <button class="set-btn" onclick="updateDb()" id="db-update-btn">Update</button>
+  </div>
+  <div id="db-status-msg" style="font-size:11px;color:var(--muted);padding:0 0 6px 0"></div>
+
+  <div class="set-section">Display</div>
+  <div class="set-row">
+    <span>Range rings</span>
+    <label class="toggle"><input type="checkbox" id="rings-toggle" onchange="toggleRings()" checked><span class="slider"></span></label>
+  </div>
+  <div class="set-row">
+    <span>Trails</span>
+    <label class="toggle"><input type="checkbox" id="trails-toggle" onchange="toggleTrails()" checked><span class="slider"></span></label>
+  </div>
+  <div class="set-row">
+    <span>Accent color</span>
+    <input type="color" id="accent-input" value="#e8b04f" onchange="setAccent(this.value)" style="cursor:pointer;border:none;background:none;width:36px;height:28px">
+  </div>
+
+  <div class="set-section">App</div>
+  <div class="set-row">
+    <span>Update app</span>
+    <button class="set-btn" onclick="updateApp()">Pull &amp; restart</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>
