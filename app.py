@@ -306,6 +306,23 @@ def db_status():
         'downloaded':      meta.get('downloaded'),
     })
 
+@app.route('/api/system/update', methods=['POST'])
+def system_update():
+    repo_dir = os.path.dirname(os.path.abspath(__file__))
+    r = subprocess.run(
+        ['git', '-C', repo_dir, 'pull', 'origin', 'main'],
+        capture_output=True, text=True
+    )
+    if r.returncode != 0:
+        return jsonify({'ok': False, 'error': r.stderr.strip()}), 500
+
+    def _restart():
+        time.sleep(1.5)
+        subprocess.run(['systemctl', '--user', 'restart', 'adsb-app'])
+
+    threading.Thread(target=_restart, daemon=True).start()
+    return jsonify({'ok': True, 'output': r.stdout.strip()})
+
 @app.route('/api/db/update', methods=['POST'])
 def db_update():
     def fetch(url: str):
