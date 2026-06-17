@@ -512,7 +512,11 @@ async function poll() {
 
     // Status bar
     el('d1090-dot').className = 'status-dot ' + (d.dump1090_running ? 'on' : 'off');
-    el('d1090-start-btn')?.classList.toggle('active', d.dump1090_running);
+    const startBtn = el('d1090-start-btn');
+    if (startBtn) {
+      startBtn.classList.toggle('active', d.dump1090_running);
+      startBtn.textContent = d.dump1090_running ? 'Running' : 'Start';
+    }
     el('stat-count').textContent = `${d.stats.active_count} aircraft`;
     if (d.stats.farthest) {
       const f = d.stats.farthest;
