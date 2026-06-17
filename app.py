@@ -22,8 +22,9 @@ APP_VERSION   = '2026.06.17'
 # ---------------------------------------------------------------------------
 AIRCRAFT_JSON   = '/run/dump1090-mutability/aircraft.json'
 RECEIVER_JSON   = '/run/dump1090-mutability/receiver.json'
-DB_FILE         = '/home/slofi/intercept/data/adsb/aircraft_db.json'
-DB_META_FILE    = '/home/slofi/intercept/data/adsb/aircraft_db_meta.json'
+DB_FILE              = '/home/slofi/intercept/data/adsb/aircraft_db.json'
+DB_META_FILE         = '/home/slofi/intercept/data/adsb/aircraft_db_meta.json'
+RECEIVER_CONFIG_FILE = '/home/slofi/intercept/data/adsb/receiver_config.json'
 
 AIRCRAFT_DB_URL  = 'https://raw.githubusercontent.com/Mictronics/readsb-protobuf/dev/webapp/src/db/aircrafts.json'
 TYPES_DB_URL     = 'https://raw.githubusercontent.com/Mictronics/readsb-protobuf/dev/webapp/src/db/types.json'
@@ -74,6 +75,34 @@ def _load_db() -> bool:
         return True
     except Exception:
         return False
+
+def _save_receiver_config():
+    try:
+        os.makedirs(os.path.dirname(RECEIVER_CONFIG_FILE), exist_ok=True)
+        with open(RECEIVER_CONFIG_FILE, 'w') as f:
+            json.dump({
+                'source': _gps_source,
+                'lat':    _manual_receiver.get('lat') if _manual_receiver else None,
+                'lon':    _manual_receiver.get('lon') if _manual_receiver else None,
+            }, f, indent=2)
+    except Exception:
+        pass
+
+def _load_receiver_config():
+    global _gps_source, _manual_receiver
+    if not os.path.exists(RECEIVER_CONFIG_FILE):
+        return
+    try:
+        with open(RECEIVER_CONFIG_FILE) as f:
+            d = json.load(f)
+        if d.get('source') == 'manual':
+            lat = d.get('lat')
+            lon = d.get('lon')
+            if lat is not None and lon is not None:
+                _gps_source      = 'manual'
+                _manual_receiver = {'lat': float(lat), 'lon': float(lon)}
+    except Exception:
+        pass
 
 # Registration prefix → country name (longest match wins)
 _REG_COUNTRY: dict = {
@@ -471,6 +500,7 @@ def set_receiver():
             _manual_receiver = None
             _gps_status = {}
         # opstoc/om: position updated by _gps_poll background thread
+    _save_receiver_config()
     return jsonify({'ok': True})
 
 @app.route('/api/db/update', methods=['POST'])
@@ -560,6 +590,7 @@ def _ensure_leaflet():
                 pass
 
 _load_db()
+_load_receiver_config()
 threading.Thread(target=_poll,       daemon=True).start()
 threading.Thread(target=_gps_poll,   daemon=True).start()
 threading.Thread(target=_ensure_leaflet, daemon=True).start()
