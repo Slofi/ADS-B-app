@@ -646,6 +646,25 @@ async function updateApp() {
   } catch(e) {}
 }
 
+function _showSplash(msg) {
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;font-size:1rem;color:#555;letter-spacing:0.05em;font-family:system-ui,sans-serif';
+  d.textContent = msg;
+  document.body.appendChild(d);
+}
+
+async function appRestart() {
+  _showSplash('ADS-B restarting…');
+  try { await fetch('/api/system/restart', { method: 'POST' }); } catch(e) {}
+  setTimeout(() => location.reload(), 4000);
+}
+
+async function appShutdown() {
+  if (!confirm('Stop ADS-B app? Start it back from the Dashboard.')) return;
+  _showSplash('ADS-B offline. Start it back up from the Dashboard.');
+  try { await fetch('/api/system/shutdown', { method: 'POST' }); } catch(e) {}
+}
+
 function setAccent(hex) {
   document.documentElement.style.setProperty('--accent', hex);
   const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);

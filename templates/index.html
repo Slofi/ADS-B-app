@@ -99,6 +99,10 @@
     <button class="set-btn" onclick="updateApp()">Pull &amp; restart</button>
   </div>
   <div id="update-msg" style="font-size:11px;padding:2px 14px 6px"></div>
+  <div class="set-row" style="gap:6px">
+    <button class="set-btn" onclick="appRestart()">Restart app</button>
+    <button class="set-btn danger" onclick="appShutdown()">Shutdown</button>
+  </div>
 </div>
 
 <script src="/static/lib/leaflet.js" onerror="(function(){var s=document.createElement('script');s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';document.head.appendChild(s)})()"></script>

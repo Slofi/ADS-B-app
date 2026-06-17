@@ -332,6 +332,22 @@ def check_update():
     except Exception as e:
         return jsonify({'ok': False, 'error': str(e)}), 500
 
+@app.route('/api/system/restart', methods=['POST'])
+def system_restart():
+    def _do():
+        time.sleep(0.8)
+        subprocess.run(['systemctl', '--user', 'restart', 'adsb-app'])
+    threading.Thread(target=_do, daemon=True).start()
+    return jsonify({'ok': True})
+
+@app.route('/api/system/shutdown', methods=['POST'])
+def system_shutdown():
+    def _do():
+        time.sleep(0.8)
+        subprocess.run(['systemctl', '--user', 'stop', 'adsb-app'])
+    threading.Thread(target=_do, daemon=True).start()
+    return jsonify({'ok': True})
+
 @app.route('/api/system/update', methods=['POST'])
 def system_update():
     repo_dir = BASE_DIR
