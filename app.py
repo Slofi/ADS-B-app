@@ -14,6 +14,9 @@ from flask import Flask, jsonify, render_template, request
 
 app = Flask(__name__)
 
+BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
+APP_VERSION   = '2026.06.17'
+
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
@@ -306,9 +309,32 @@ def db_status():
         'downloaded':      meta.get('downloaded'),
     })
 
+@app.route('/api/version')
+def get_version():
+    try:
+        commit = subprocess.check_output(
+            ['git', '-C', BASE_DIR, 'rev-parse', '--short', 'HEAD'],
+            stderr=subprocess.DEVNULL, text=True
+        ).strip()
+    except Exception:
+        commit = '?'
+    return jsonify({'version': APP_VERSION, 'commit': commit})
+
+@app.route('/api/system/check-update', methods=['POST'])
+def check_update():
+    try:
+        subprocess.run(['git', '-C', BASE_DIR, 'fetch'], capture_output=True, timeout=10)
+        behind = subprocess.check_output(
+            ['git', '-C', BASE_DIR, 'rev-list', 'HEAD..origin/main', '--count'],
+            text=True
+        ).strip()
+        return jsonify({'ok': True, 'behind': int(behind)})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
 @app.route('/api/system/update', methods=['POST'])
 def system_update():
-    repo_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_dir = BASE_DIR
     r = subprocess.run(
         ['git', '-C', repo_dir, 'pull', 'origin', 'main'],
         capture_output=True, text=True
@@ -362,8 +388,28 @@ def db_update():
 # ---------------------------------------------------------------------------
 # Boot
 # ---------------------------------------------------------------------------
+def _ensure_leaflet():
+    """Download Leaflet CSS/JS to static/lib/ if not already present."""
+    lib_dir = os.path.join(BASE_DIR, 'static', 'lib')
+    os.makedirs(lib_dir, exist_ok=True)
+    files = {
+        'leaflet.css': 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+        'leaflet.js':  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+    }
+    for name, url in files.items():
+        path = os.path.join(lib_dir, name)
+        if not os.path.exists(path):
+            try:
+                req = urllib.request.Request(url, headers={'User-Agent': 'ADS-B-App/1.0'})
+                with urllib.request.urlopen(req, timeout=20) as r:
+                    with open(path, 'wb') as f:
+                        f.write(r.read())
+            except Exception:
+                pass
+
 _load_db()
 threading.Thread(target=_poll, daemon=True).start()
+threading.Thread(target=_ensure_leaflet, daemon=True).start()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5400, debug=False)

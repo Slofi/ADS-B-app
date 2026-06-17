@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ADS-B</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="/static/lib/leaflet.css" onerror="this.onerror=null;this.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'">
 <link rel="stylesheet" href="/static/css/app.css">
 </head>
 <body>
@@ -58,15 +58,12 @@
 
 <!-- Settings panel -->
 <div id="settings" class="settings hidden">
-  <div class="settings-title">Settings</div>
-
-  <div class="set-section">dump1090</div>
-  <div class="set-row">
-    <span>Status</span>
-    <div style="display:flex;gap:6px">
-      <button class="set-btn" onclick="d1090Action('start')">Start</button>
-      <button class="set-btn" onclick="d1090Action('restart')">Restart</button>
-      <button class="set-btn danger" onclick="d1090Action('stop')">Stop</button>
+  <div class="settings-header">
+    <span class="settings-title-text">Settings</span>
+    <div class="settings-hdr-btns">
+      <button class="set-hdr-btn" onclick="d1090Action('start')" title="Start dump1090">▶</button>
+      <button class="set-hdr-btn" onclick="d1090Action('restart')" title="Restart dump1090">↺</button>
+      <button class="set-hdr-btn danger" onclick="d1090Action('stop')" title="Stop dump1090">■</button>
     </div>
   </div>
 
@@ -75,13 +72,17 @@
     <span id="db-version-label">Loading…</span>
     <button class="set-btn" onclick="updateDb()" id="db-update-btn">Update</button>
   </div>
-  <div id="db-status-msg" style="font-size:11px;color:var(--muted);padding:0 0 6px 0"></div>
+  <div id="db-status-msg" style="font-size:11px;color:var(--muted);padding:0 0 6px 0 14px"></div>
+
+  <div class="set-section">Map Layer</div>
+  <div id="layer-picker"></div>
 
   <div class="set-section">Display</div>
   <div class="set-row">
     <span>Range rings</span>
     <label class="toggle"><input type="checkbox" id="rings-toggle" onchange="toggleRings()" checked><span class="slider"></span></label>
   </div>
+  <div id="rings-opts" class="rings-opts"></div>
   <div class="set-row">
     <span>Trails</span>
     <label class="toggle"><input type="checkbox" id="trails-toggle" onchange="toggleTrails()" checked><span class="slider"></span></label>
@@ -92,13 +93,17 @@
   </div>
 
   <div class="set-section">App</div>
-  <div class="set-row">
-    <span>Update app</span>
+  <div class="set-row" style="padding-bottom:2px">
+    <span id="app-version" style="font-size:11px;color:var(--muted)">…</span>
+  </div>
+  <div class="set-row" style="gap:6px">
+    <button class="set-btn" onclick="checkUpdate()" id="check-update-btn">Check</button>
     <button class="set-btn" onclick="updateApp()">Pull &amp; restart</button>
   </div>
+  <div id="update-msg" style="font-size:11px;padding:2px 14px 6px"></div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/static/lib/leaflet.js" onerror="(function(){var s=document.createElement('script');s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';document.head.appendChild(s)})()"></script>
 <script src="/static/js/app.js"></script>
 </body>
 </html>

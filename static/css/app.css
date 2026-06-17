@@ -44,8 +44,8 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 
 .hdr-btn {
   background: none; border: 1px solid var(--border); border-radius: 7px;
-  color: var(--muted); cursor: pointer; padding: 5px 10px; font-size: 0.85rem;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  color: var(--muted); cursor: pointer; padding: 6px 13px; font-size: 1.05rem;
+  transition: color 0.15s, border-color 0.15s, background 0.15s; line-height: 1;
 }
 .hdr-btn:hover, .hdr-btn.active { color: var(--accent); border-color: var(--accent-border); background: var(--accent-dim); }
 
@@ -173,13 +173,26 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 /* ─── Settings ──────────────────────────────────────────────── */
 .settings {
   position: fixed; right: calc(var(--panel-w) + 10px); top: calc(var(--header-h) + 10px);
-  width: 260px; background: var(--bg2);
+  width: 270px; background: var(--bg2);
   border: 1px solid var(--border2); border-radius: 14px;
   z-index: 1500; padding: 0 0 10px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  max-height: calc(100vh - var(--header-h) - 20px); overflow-y: auto;
 }
 .settings.hidden { display: none; }
-.settings-title { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--accent); padding: 12px 14px 8px; border-bottom: 1px solid var(--border); }
+.settings-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px 8px; border-bottom: 1px solid var(--border);
+}
+.settings-title-text { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--accent); }
+.settings-hdr-btns { display: flex; gap: 4px; }
+.set-hdr-btn {
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px;
+  color: var(--muted); cursor: pointer; padding: 4px 9px; font-size: 0.85rem; line-height: 1;
+  transition: all 0.12s;
+}
+.set-hdr-btn:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-border); }
+.set-hdr-btn.danger:hover { background: rgba(255,80,80,0.15); color: var(--red); border-color: rgba(255,80,80,0.4); }
 .set-section { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); padding: 10px 14px 4px; }
 .set-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 14px; gap: 8px; font-size: 0.8rem; color: var(--text); }
 .set-btn {
@@ -189,6 +202,28 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 }
 .set-btn:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-border); }
 .set-btn.danger:hover { background: rgba(255,80,80,0.15); color: var(--red); border-color: rgba(255,80,80,0.4); }
+
+/* Layer picker */
+.layer-opt {
+  padding: 6px 14px; font-size: 0.8rem; color: var(--muted);
+  cursor: pointer; transition: background 0.12s, color 0.12s;
+}
+.layer-opt:hover  { background: var(--bg3); color: var(--text); }
+.layer-opt.active { color: var(--accent); background: var(--accent-dim); }
+.layer-key-input {
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: 5px;
+  padding: 4px 8px; color: var(--text); font-size: 0.75rem; width: 100%;
+}
+
+/* Ring distance chips */
+.rings-opts { display: flex; flex-wrap: wrap; gap: 5px; padding: 4px 14px 8px; }
+.ring-chip {
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: 5px;
+  color: var(--muted); cursor: pointer; padding: 3px 8px; font-size: 0.72rem;
+  transition: all 0.12s;
+}
+.ring-chip.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-border); }
+.ring-chip:hover  { border-color: var(--accent-border); color: var(--text); }
 
 /* Toggle switch */
 .toggle { position: relative; display: inline-block; width: 34px; height: 18px; flex-shrink: 0; }

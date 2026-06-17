@@ -10,6 +10,15 @@ if [ ! -d "$HOME/.adsb-venv" ]; then
 fi
 "$HOME/.adsb-venv/bin/pip" install -q -r "$DIR/requirements.txt"
 
+# Leaflet (local copy — served from static/lib/ for offline use)
+mkdir -p "$DIR/static/lib"
+for f in leaflet.css leaflet.js; do
+  if [ ! -f "$DIR/static/lib/$f" ]; then
+    echo "Downloading Leaflet $f..."
+    curl -sL "https://unpkg.com/leaflet@1.9.4/dist/$f" -o "$DIR/static/lib/$f"
+  fi
+done
+
 # Systemd user service
 SERVICE_FILE="$HOME/.config/systemd/user/adsb-app.service"
 mkdir -p "$HOME/.config/systemd/user"
@@ -32,4 +41,4 @@ EOF
 systemctl --user daemon-reload
 systemctl --user enable adsb-app
 systemctl --user start adsb-app
-echo "=== Done — http://localhost:5300 ==="
+echo "=== Done — http://localhost:5400 ==="
