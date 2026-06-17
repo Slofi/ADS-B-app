@@ -86,30 +86,20 @@ const map = L.map('map', {
 
 // ─── Tile layers ─────────────────────────────────────────────────────────────
 const TILE_LAYERS = {
-  dark:            { label: 'Dark Matter',       url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',           maxZoom: 18 },
-  dark_nolabels:   { label: 'Dark No Labels',    url: 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',      maxZoom: 18 },
-  voyager:         { label: 'Voyager',           url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', maxZoom: 19 },
-  positron:        { label: 'Positron',          url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',          maxZoom: 19 },
-  esri_gray_dark:  { label: 'Esri Dark Gray',    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', maxZoom: 16 },
-  esri_sat:        { label: 'Esri Satellite',    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',               maxZoom: 18 },
-  esri_topo:       { label: 'Esri Topo',         url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',              maxZoom: 18 },
-  stadia_outdoors: { label: 'Stadia Outdoors',   url: 'https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}{r}.png',          maxZoom: 20 },
-  stamen_terrain:  { label: 'Stamen Terrain',    url: 'https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}{r}.png',    maxZoom: 18 },
-  tf_landscape:    { label: 'TF Landscape ★',    url: 'https://tile.thunderforest.com/landscape/{z}/{x}/{y}.png?apikey={tfkey}', maxZoom: 22, needsTfKey: true },
-  tf_outdoors:     { label: 'TF Outdoors ★',     url: 'https://tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey={tfkey}',  maxZoom: 22, needsTfKey: true },
-  mt_topo:         { label: 'MT Topo ★',         url: 'https://api.maptiler.com/maps/topo-v2/{z}/{x}/{y}.png?key={mtkey}',            maxZoom: 20, needsMtKey: true },
-  mt_hybrid:       { label: 'MT Satellite Hybrid ★', url: 'https://api.maptiler.com/maps/hybrid-v4-dark/{z}/{x}/{y}.jpg?key={mtkey}', maxZoom: 20, needsMtKey: true },
+  dark:            { label: 'Dark Matter',     url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',           maxZoom: 18 },
+  dark_nolabels:   { label: 'Dark No Labels',  url: 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',      maxZoom: 18 },
+  voyager:         { label: 'Voyager',         url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', maxZoom: 19 },
+  positron:        { label: 'Positron',        url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',          maxZoom: 19 },
+  esri_gray_dark:  { label: 'Esri Dark Gray',  url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', maxZoom: 16 },
+  esri_sat:        { label: 'Esri Satellite',  url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',               maxZoom: 18 },
+  esri_topo:       { label: 'Esri Topo',       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',              maxZoom: 18 },
+  stadia_outdoors: { label: 'Stadia Outdoors', url: 'https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}{r}.png',          maxZoom: 20 },
+  stamen_terrain:  { label: 'Stamen Terrain',  url: 'https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}{r}.png',    maxZoom: 18 },
 };
 
 const LAYER_LS_KEY   = 'adsb_base_layer';
 let baseTileLayer    = null;
 let currentLayerKey  = localStorage.getItem(LAYER_LS_KEY) || 'dark';
-
-function _resolveTileUrl(url) {
-  const tfKey = localStorage.getItem('thunderforestApiKey') || '';
-  const mtKey = localStorage.getItem('mapTilerApiKey') || '';
-  return url.replace('{tfkey}', tfKey).replace('{mtkey}', mtKey);
-}
 
 function setBaseLayer(key, offlineId) {
   if (baseTileLayer) { map.removeLayer(baseTileLayer); baseTileLayer = null; }
@@ -120,7 +110,7 @@ function setBaseLayer(key, offlineId) {
     currentLayerKey = 'offline:' + offlineId;
   } else {
     const def = TILE_LAYERS[key] || TILE_LAYERS.dark;
-    baseTileLayer = L.tileLayer(_resolveTileUrl(def.url), { maxZoom: def.maxZoom }).addTo(map);
+    baseTileLayer = L.tileLayer(def.url, { maxZoom: def.maxZoom }).addTo(map);
     currentLayerKey = key;
   }
   try { localStorage.setItem(LAYER_LS_KEY, currentLayerKey); } catch(e) {}
@@ -128,7 +118,6 @@ function setBaseLayer(key, offlineId) {
 }
 
 function initBaseTiles() {
-  // If user had a saved layer, restore it immediately (skip mbtileserver probe)
   const saved = localStorage.getItem(LAYER_LS_KEY) || 'dark';
   if (saved.startsWith('offline:')) {
     const id = saved.slice(8);
@@ -138,33 +127,20 @@ function initBaseTiles() {
     return;
   }
   const def = TILE_LAYERS[saved] || TILE_LAYERS.dark;
-  baseTileLayer = L.tileLayer(_resolveTileUrl(def.url), { maxZoom: def.maxZoom }).addTo(map);
+  baseTileLayer = L.tileLayer(def.url, { maxZoom: def.maxZoom }).addTo(map);
 }
 
 function renderLayerPicker() {
   const container = el('layer-picker');
   if (!container) return;
-  const tfKey = localStorage.getItem('thunderforestApiKey') || '';
-  const mtKey = localStorage.getItem('mapTilerApiKey') || '';
 
   let html = '';
   Object.entries(TILE_LAYERS).forEach(([key, def]) => {
-    if (def.needsTfKey && !tfKey) return;
-    if (def.needsMtKey && !mtKey) return;
     const active = currentLayerKey === key;
     html += `<div class="layer-opt${active ? ' active' : ''}" onclick="setBaseLayer('${key}')">${def.label}</div>`;
   });
   html += `<div class="set-section" style="padding-top:6px">Offline</div>`;
   html += `<div id="offline-layers-list"><div class="layer-opt" style="pointer-events:none;opacity:0.5">Loading…</div></div>`;
-  html += `<div class="set-section" style="padding-top:6px">API Keys</div>`;
-  html += `<div class="set-row" style="flex-direction:column;align-items:stretch;gap:3px">
-    <span style="font-size:11px;color:var(--muted)">Thunderforest</span>
-    <input class="layer-key-input" type="text" value="${tfKey}" placeholder="API key" onchange="saveLayerKey('thunderforestApiKey',this.value)">
-  </div>`;
-  html += `<div class="set-row" style="flex-direction:column;align-items:stretch;gap:3px;padding-top:4px">
-    <span style="font-size:11px;color:var(--muted)">MapTiler</span>
-    <input class="layer-key-input" type="text" value="${mtKey}" placeholder="API key" onchange="saveLayerKey('mapTilerApiKey',this.value)">
-  </div>`;
 
   container.innerHTML = html;
   loadOfflineLayers();
@@ -192,9 +168,6 @@ async function loadOfflineLayers() {
   }
 }
 
-function saveLayerKey(lsKey, val) {
-  try { localStorage.setItem(lsKey, val.trim()); } catch(e) {}
-}
 
 initBaseTiles();
 
