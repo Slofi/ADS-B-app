@@ -366,56 +366,46 @@ function updateReceiverMarker(pos) {
   }).bindTooltip('CD receiver', { permanent: false }).addTo(map);
 }
 
-// ─── Selection + popup ───────────────────────────────────────────────────────
+// ─── Selection (inline expanded row) ─────────────────────────────────────────
 function selectAircraft(hex) {
-  selectedHex = hex;
-  const ac = aircraftData[hex] || historyData[hex];
-  if (!ac) { closePopup(); return; }
-
-  // Highlight list row
-  document.querySelectorAll('.ac-row').forEach(r => r.classList.remove('selected'));
-  const row = document.getElementById('row-' + hex);
-  if (row) { row.classList.add('selected'); row.scrollIntoView({ block: 'nearest' }); }
-
-  showPopup(ac);
+  if (selectedHex === hex) {
+    selectedHex = null; followHex = null;
+    renderList(); return;
+  }
+  selectedHex = hex; followHex = null;
+  renderList();
+  const row = el('row-' + hex);
+  if (row) row.scrollIntoView({ block: 'nearest' });
 }
 
-function showPopup(ac) {
-  const color = altColor(ac.altitude, ac.is_military, ac.emergency);
-  const label = ac.flight || ac.registration || ac.hex.toUpperCase();
-
-  el('pop-flight').textContent = label;
-  el('pop-flight').style.color = color;
-  el('pop-reg').textContent    = ac.registration && ac.flight ? ac.registration : '';
-  el('pop-type').textContent   = ac.type_name || (ac.type_code ? `Type: ${ac.type_code}` : '');
-
+function buildExpanded(ac) {
+  const followActive = followHex === ac.hex;
   const rows = [
-    ['Altitude',  fmtAlt(ac.altitude)],
-    ['Speed',     fmtSpd(ac.speed)],
-    ['Heading',   fmtHdg(ac.track)],
-    ['Vert rate', ac.vert_rate != null ? ac.vert_rate + ' ft/m ' + fmtVr(ac.vert_rate) : '—'],
-    ['Distance',  fmtDist(ac.distance)],
-    ['Squawk',    ac.squawk || '—'],
-    ['RSSI',      ac.rssi != null ? ac.rssi.toFixed(1) + ' dBFS' : '—'],
-    ['Messages',  ac.messages ?? '—'],
+    ['Altitude',   fmtAlt(ac.altitude)],
+    ['Speed',      fmtSpd(ac.speed)],
+    ['Heading',    fmtHdg(ac.track)],
+    ['Vert rate',  ac.vert_rate != null ? ac.vert_rate + ' ft/m ' + fmtVr(ac.vert_rate) : '—'],
+    ['Distance',   fmtDist(ac.distance)],
+    ['Squawk',     ac.squawk || '—'],
+    ['RSSI',       ac.rssi != null ? ac.rssi.toFixed(1) + ' dBFS' : '—'],
+    ['Messages',   ac.messages ?? '—'],
     ['First seen', ac.first_seen ? fmtAge(ac.first_seen) : '—'],
     ['Last seen',  ac.last_seen  ? fmtAge(ac.last_seen)  : '—'],
   ];
-  el('pop-grid').innerHTML = rows.map(([l, v]) =>
-    `<div class="pop-cell"><div class="pop-label">${l}</div><div class="pop-value">${v}</div></div>`
-  ).join('');
-
-  const emgEl = el('pop-emergency');
-  emgEl.classList.toggle('hidden', !ac.emergency);
-  el('popup').classList.toggle('emergency-mode', ac.emergency);
-  el('popup').classList.remove('hidden');
-  updateFollowBtn();
-}
-
-function closePopup() {
-  el('popup').classList.add('hidden');
-  selectedHex = null; followHex = null;
-  document.querySelectorAll('.ac-row').forEach(r => r.classList.remove('selected'));
+  const typeStr  = ac.type_name || (ac.type_code ? 'Type: ' + ac.type_code : '');
+  const emgHtml  = ac.emergency ? `<div class="exp-emergency">⚠ EMERGENCY SQUAWK</div>` : '';
+  const emgCls   = ac.emergency ? ' emergency' : '';
+  return `<div class="ac-expanded${emgCls}">
+    ${typeStr ? `<div class="exp-type">${typeStr}</div>` : ''}
+    <div class="exp-grid">${rows.map(([l, v]) =>
+      `<div class="exp-cell"><div class="exp-label">${l}</div><div class="exp-value">${v}</div></div>`
+    ).join('')}</div>
+    <div class="exp-btns">
+      <button class="exp-btn" onclick="centerOnSelected()">⊕ Center</button>
+      <button class="exp-btn${followActive ? ' active' : ''}" id="follow-btn" onclick="toggleFollow()">${followActive ? '⏸ Following' : '▶ Follow'}</button>
+    </div>
+    ${emgHtml}
+  </div>`;
 }
 
 function centerOnSelected() {
@@ -424,19 +414,19 @@ function centerOnSelected() {
 }
 
 function toggleFollow() {
-  if (followHex === selectedHex) {
-    followHex = null;
-  } else {
-    followHex = selectedHex;
-    centerOnSelected();
+  followHex = followHex === selectedHex ? null : selectedHex;
+  if (followHex) centerOnSelected();
+  const btn = el('follow-btn');
+  if (btn) {
+    btn.classList.toggle('active', !!followHex);
+    btn.textContent = followHex ? '⏸ Following' : '▶ Follow';
   }
-  updateFollowBtn();
 }
 
 function updateFollowBtn() {
   const btn = el('follow-btn');
   if (!btn) return;
-  const active = followHex && followHex === selectedHex;
+  const active = !!(followHex && followHex === selectedHex);
   btn.classList.toggle('active', active);
   btn.textContent = active ? '⏸ Following' : '▶ Follow';
 }
@@ -451,6 +441,7 @@ function switchTab(tab) {
 
 function renderList() {
   const list = el('ac-list');
+  const prevScroll = list.scrollTop;
   const data = currentTab === 'active'
     ? Object.values(aircraftData)
     : Object.values(historyData);
@@ -463,27 +454,24 @@ function renderList() {
     return;
   }
 
-  // Sort: active→ by distance (null last); history→ by gone_at desc
   const sorted = data.slice().sort((a, b) => {
     if (currentTab === 'history') return (b.gone_at || 0) - (a.gone_at || 0);
-    const da = a.distance ?? 99999;
-    const db = b.distance ?? 99999;
-    return da - db;
+    return (a.distance ?? 99999) - (b.distance ?? 99999);
   });
 
   list.innerHTML = sorted.map(ac => {
-    const label = ac.flight || ac.registration || ac.hex.toUpperCase();
-    const sub   = [ac.type_name || ac.type_code, ac.registration && ac.flight ? ac.registration : ''].filter(Boolean).join(' · ');
-    const color = altColor(ac.altitude, ac.is_military, ac.emergency);
-    const vr    = fmtVr(ac.vert_rate);
-    const vrColor = ac.vert_rate > 100 ? '#3ddc84' : ac.vert_rate < -100 ? '#ff8080' : 'var(--muted)';
+    const label  = ac.flight || ac.registration || ac.hex.toUpperCase();
+    const sub    = [ac.type_name || ac.type_code, ac.registration && ac.flight ? ac.registration : ''].filter(Boolean).join(' · ');
+    const color  = altColor(ac.altitude, ac.is_military, ac.emergency);
+    const vr     = fmtVr(ac.vert_rate);
+    const vrColor  = ac.vert_rate > 100 ? '#3ddc84' : ac.vert_rate < -100 ? '#ff8080' : 'var(--muted)';
     const milBadge = ac.is_military ? '<span class="mil-badge">MIL</span>' : '';
     const emgBadge = ac.emergency   ? '<span class="emg-badge">EMRG</span>' : '';
-    const sel  = selectedHex === ac.hex ? ' selected' : '';
-    const gone = ac.gone ? ' gone' : '';
+    const sel    = selectedHex === ac.hex ? ' selected' : '';
+    const gone   = ac.gone ? ' gone' : '';
     const emgCls = ac.emergency ? ' emergency' : '';
 
-    return `<div class="ac-row${sel}${gone}${emgCls}" id="row-${ac.hex}" onclick="selectAircraft('${ac.hex}')">
+    const row = `<div class="ac-row${sel}${gone}${emgCls}" id="row-${ac.hex}" onclick="selectAircraft('${ac.hex}')">
       <div class="ac-icon-wrap">${makeListIcon(ac)}</div>
       <div class="ac-info">
         <div class="ac-callsign">${label}${milBadge}${emgBadge}</div>
@@ -494,7 +482,11 @@ function renderList() {
         <div class="ac-dist">${fmtDist(ac.distance)} <span class="ac-vr" style="color:${vrColor}">${vr}</span></div>
       </div>
     </div>`;
+
+    return row + (selectedHex === ac.hex ? buildExpanded(ac) : '');
   }).join('');
+
+  list.scrollTop = prevScroll;
 }
 
 // ─── Main update loop ─────────────────────────────────────────────────────────
@@ -555,10 +547,9 @@ async function poll() {
       if (ac && ac.lat != null) map.panTo([ac.lat, ac.lon], { animate: true, duration: 0.8 });
     }
 
-    // Refresh popup if open
-    if (selectedHex) {
-      const ac = aircraftData[selectedHex] || historyData[selectedHex];
-      if (ac) showPopup(ac); else closePopup();
+    // Deselect if selected aircraft is gone from both dicts
+    if (selectedHex && !aircraftData[selectedHex] && !historyData[selectedHex]) {
+      selectedHex = null; followHex = null;
     }
 
     renderList();
