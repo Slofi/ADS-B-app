@@ -496,7 +496,7 @@ async function poll() {
     const startBtn = el('d1090-start-btn');
     if (startBtn) {
       startBtn.classList.toggle('active', d.dump1090_running);
-      startBtn.textContent = d.dump1090_running ? 'Running' : 'Start';
+      startBtn.textContent = d.dump1090_running ? 'Running…' : 'Start';
     }
     el('stat-count').textContent = `${d.stats.active_count} aircraft`;
     const parts = [];

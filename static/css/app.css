@@ -241,10 +241,31 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   font-size: 0.8rem; color: var(--muted); padding: 0 14px 8px;
 }
 
+/* ─── Settings scrollbar ────────────────────────────────────── */
+.settings::-webkit-scrollbar       { width: 4px; }
+.settings::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.settings::-webkit-scrollbar-track { background: transparent; }
+
 /* ─── Leaflet overrides ─────────────────────────────────────── */
 .leaflet-container { background: #0d1117; }
 .aircraft-div-icon { background: transparent !important; border: none !important; }
 .leaflet-popup-content-wrapper, .leaflet-popup-tip { display: none; }
+
+/* Zoom +/- buttons */
+.leaflet-bar a,
+.leaflet-bar a:hover,
+.leaflet-touch .leaflet-bar a {
+  background: var(--bg3) !important;
+  color: var(--muted) !important;
+  border-color: var(--border2) !important;
+}
+.leaflet-bar a:hover {
+  background: var(--bg2) !important;
+  color: var(--text) !important;
+}
+.leaflet-bar { border: 1px solid var(--border2) !important; box-shadow: none !important; }
+.leaflet-bar a:first-child { border-radius: 7px 7px 0 0 !important; }
+.leaflet-bar a:last-child  { border-radius: 0 0 7px 7px !important; }
 
 /* Emergency pulse on map icon */
 @keyframes emerg-pulse {
