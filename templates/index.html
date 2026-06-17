@@ -74,6 +74,22 @@
     <input type="color" id="accent-input" value="#e8b04f" onchange="setAccent(this.value)" style="cursor:pointer;border:none;background:none;width:36px;height:28px">
   </div>
 
+  <div class="set-section">Position</div>
+  <div style="display:flex;gap:6px;padding:6px 14px 10px;flex-wrap:wrap">
+    <button class="ring-chip active" id="pos-auto"   onclick="setGpsSource('auto')">Auto</button>
+    <button class="ring-chip"        id="pos-opstoc" onclick="setGpsSource('opstoc')">OPS-TOC</button>
+    <button class="ring-chip"        id="pos-om"     onclick="setGpsSource('om')">OM</button>
+    <button class="ring-chip"        id="pos-manual" onclick="setGpsSource('manual')">Manual</button>
+  </div>
+  <div id="pos-status" style="font-size:11px;color:var(--muted);padding:0 14px 8px"></div>
+  <div id="pos-manual-inputs" style="display:none;padding:0 14px 10px;flex-direction:column;gap:6px">
+    <div style="display:flex;gap:6px">
+      <input id="pos-lat" class="layer-key-input" type="number" step="0.000001" placeholder="Latitude"  style="flex:1">
+      <input id="pos-lon" class="layer-key-input" type="number" step="0.000001" placeholder="Longitude" style="flex:1">
+    </div>
+    <button class="set-btn" onclick="applyManualPos()">Apply &amp; Center</button>
+  </div>
+
   <div class="set-section">App</div>
   <div class="set-row" style="padding-bottom:2px">
     <span id="app-version" style="font-size:11px;color:var(--muted)">…</span>

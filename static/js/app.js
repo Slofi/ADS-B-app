@@ -495,9 +495,12 @@ async function poll() {
     const resp = await fetch('/api/aircraft');
     const d    = await resp.json();
 
-    // Receiver
-    if (d.receiver && d.receiver.lat) {
-      receiverPos = d.receiver;
+    // Receiver — prefer effective_receiver (manual/GPS override) over raw dump1090
+    const effRecv = (d.effective_receiver && d.effective_receiver.lat) ? d.effective_receiver
+                  : (d.receiver && d.receiver.lat)                     ? d.receiver
+                  : null;
+    if (effRecv) {
+      receiverPos = effRecv;
       updateReceiverMarker(receiverPos);
       if (!rangeRings.length && showRings) drawRings();
     }
@@ -559,6 +562,64 @@ async function poll() {
   setTimeout(poll, 2000);
 }
 
+// ─── Receiver / GPS position ─────────────────────────────────────────────────
+async function loadReceiverStatus() {
+  try {
+    const d = await (await fetch('/api/receiver')).json();
+    const statusEl = el('pos-status');
+    if (statusEl) {
+      if (d.lat && d.lon) {
+        const fix  = d.gps_status?.fix  != null ? ` · fix ${d.gps_status.fix}` : '';
+        const sats = d.gps_status?.sats != null ? ` · ${d.gps_status.sats} sats` : '';
+        statusEl.textContent = `${d.lat.toFixed(5)}, ${d.lon.toFixed(5)}${fix}${sats}`;
+        statusEl.style.color = 'var(--green)';
+      } else {
+        statusEl.textContent = d.source === 'auto' ? 'No position from dump1090 yet' : 'No GPS fix';
+        statusEl.style.color = 'var(--muted)';
+      }
+    }
+    ['auto','opstoc','om','manual'].forEach(s => {
+      const btn = el('pos-' + s);
+      if (btn) btn.classList.toggle('active', d.source === s);
+    });
+    const manEl = el('pos-manual-inputs');
+    if (manEl) {
+      manEl.style.display = d.source === 'manual' ? 'flex' : 'none';
+      if (d.source === 'manual' && d.lat && d.lon) {
+        const latEl = el('pos-lat'); const lonEl = el('pos-lon');
+        if (latEl && !latEl.value) latEl.value = d.lat.toFixed(6);
+        if (lonEl && !lonEl.value) lonEl.value = d.lon.toFixed(6);
+      }
+    }
+  } catch(e) {}
+}
+
+async function setGpsSource(source) {
+  try {
+    localStorage.setItem('adsb_gps_source', source);
+    await fetch('/api/receiver', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ source }),
+    });
+    await loadReceiverStatus();
+  } catch(e) {}
+}
+
+async function applyManualPos() {
+  const lat = parseFloat(el('pos-lat').value);
+  const lon = parseFloat(el('pos-lon').value);
+  if (isNaN(lat) || isNaN(lon)) return;
+  try {
+    await fetch('/api/receiver', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ source: 'manual', lat, lon }),
+    });
+    await loadReceiverStatus();
+    // Center map on the new receiver position
+    map.setView([lat, lon], Math.max(map.getZoom(), 9));
+  } catch(e) {}
+}
+
 // ─── Settings ────────────────────────────────────────────────────────────────
 function toggleSettings() {
   el('settings').classList.toggle('hidden');
@@ -567,6 +628,7 @@ function toggleSettings() {
     loadVersion();
     renderRingOpts();
     renderLayerPicker();
+    loadReceiverStatus();
   }
 }
 
@@ -693,6 +755,15 @@ function updateClock() {
 
   // Rings toggle state
   el('rings-btn').classList.toggle('active', showRings);
+
+  // Restore saved GPS source preference to backend
+  const savedGpsSrc = localStorage.getItem('adsb_gps_source') || 'auto';
+  if (savedGpsSrc !== 'auto') {
+    fetch('/api/receiver', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ source: savedGpsSrc }),
+    }).catch(() => {});
+  }
 
   updateClock();
   setInterval(updateClock, 1000);

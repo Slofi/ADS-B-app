@@ -34,15 +34,22 @@ GONE_TIMEOUT    = 60.0   # seconds before gone aircraft moves to history
 MAX_TRACK_PTS   = 300    # max stored track points per aircraft
 MAX_HISTORY     = 50     # max history entries (oldest dropped)
 
+GPS_POLL_INTERVAL = 5.0
+GPS_OPSTOC_URL    = 'http://localhost:8090/api/gps'
+GPS_OM_URL        = 'http://localhost:8082/api/settings/gps'
+
 EMERGENCY_SQUAWKS = {'7700', '7600', '7500'}
 
 # ---------------------------------------------------------------------------
 # State
 # ---------------------------------------------------------------------------
-_lock     = threading.Lock()
-_aircraft = {}   # hex → dict  (active)
-_history  = {}   # hex → dict  (gone, session-only)
-_receiver = {}   # {lat, lon, version}
+_lock             = threading.Lock()
+_aircraft         = {}   # hex → dict  (active)
+_history          = {}   # hex → dict  (gone, session-only)
+_receiver         = {}   # {lat, lon, version} — from dump1090
+_manual_receiver  = None # {lat, lon} — overrides dump1090 when set
+_gps_source       = 'auto'  # 'auto' | 'opstoc' | 'om' | 'manual'
+_gps_status       = {}       # {sats, fix, alt} from external GPS source
 
 _db_aircraft: dict = {}
 _db_types:    dict = {}
@@ -182,8 +189,9 @@ def _update_state():
     with open(AIRCRAFT_JSON) as f:
         feed = json.load(f)
 
-    rlat = _receiver.get('lat')
-    rlon = _receiver.get('lon')
+    eff_recv = _manual_receiver or _receiver
+    rlat = eff_recv.get('lat') if eff_recv else None
+    rlon = eff_recv.get('lon') if eff_recv else None
     current_hexes: set = set()
 
     for ac in feed.get('aircraft', []):
@@ -266,10 +274,11 @@ def get_aircraft():
             }
 
     return jsonify({
-        'active':           active,
-        'history':          history,
-        'receiver':         _receiver,
-        'dump1090_running': _is_dump1090_running(),
+        'active':             active,
+        'history':            history,
+        'receiver':           _receiver,
+        'effective_receiver': _manual_receiver or _receiver,
+        'dump1090_running':   _is_dump1090_running(),
         'stats': {
             'active_count':  len(active),
             'history_count': len(history),
@@ -365,6 +374,35 @@ def system_update():
     threading.Thread(target=_restart, daemon=True).start()
     return jsonify({'ok': True, 'output': r.stdout.strip()})
 
+@app.route('/api/receiver', methods=['GET'])
+def get_receiver():
+    with _lock:
+        eff = _manual_receiver or _receiver or {}
+    return jsonify({
+        'source':     _gps_source,
+        'lat':        eff.get('lat'),
+        'lon':        eff.get('lon'),
+        'gps_status': _gps_status,
+    })
+
+@app.route('/api/receiver', methods=['POST'])
+def set_receiver():
+    global _gps_source, _manual_receiver, _gps_status
+    data = request.get_json(silent=True) or {}
+    source = data.get('source', 'auto')
+    with _lock:
+        _gps_source = source
+        if source == 'manual':
+            lat = data.get('lat')
+            lon = data.get('lon')
+            if lat is not None and lon is not None:
+                _manual_receiver = {'lat': float(lat), 'lon': float(lon)}
+        elif source == 'auto':
+            _manual_receiver = None
+            _gps_status = {}
+        # opstoc/om: position updated by _gps_poll background thread
+    return jsonify({'ok': True})
+
 @app.route('/api/db/update', methods=['POST'])
 def db_update():
     def fetch(url: str):
@@ -402,6 +440,33 @@ def db_update():
         return jsonify({'ok': False, 'error': str(exc)}), 500
 
 # ---------------------------------------------------------------------------
+# GPS proxy poll
+# ---------------------------------------------------------------------------
+def _gps_poll():
+    global _manual_receiver, _gps_status
+    while True:
+        if _gps_source in ('opstoc', 'om'):
+            url = GPS_OPSTOC_URL if _gps_source == 'opstoc' else GPS_OM_URL
+            try:
+                req = urllib.request.Request(url, headers={'User-Agent': 'ADS-B-App/1.0'})
+                with urllib.request.urlopen(req, timeout=3) as r:
+                    data = json.loads(r.read().decode('utf-8'))
+                lat = data.get('lat')
+                lon = data.get('lon')
+                if lat and lon:
+                    with _lock:
+                        _manual_receiver = {'lat': float(lat), 'lon': float(lon)}
+                    _gps_status = {
+                        'sats':      data.get('sats'),
+                        'sats_view': data.get('sats_view'),
+                        'fix':       data.get('fix'),
+                        'alt':       data.get('alt'),
+                    }
+            except Exception:
+                pass
+        time.sleep(GPS_POLL_INTERVAL)
+
+# ---------------------------------------------------------------------------
 # Boot
 # ---------------------------------------------------------------------------
 def _ensure_leaflet():
@@ -424,7 +489,8 @@ def _ensure_leaflet():
                 pass
 
 _load_db()
-threading.Thread(target=_poll, daemon=True).start()
+threading.Thread(target=_poll,       daemon=True).start()
+threading.Thread(target=_gps_poll,   daemon=True).start()
 threading.Thread(target=_ensure_leaflet, daemon=True).start()
 
 if __name__ == '__main__':
