@@ -187,6 +187,27 @@ let receiverPos   = null;
 // Cancel follow on manual map drag
 map.on('dragstart', () => { if (followHex) { followHex = null; updateFollowBtn(); } });
 
+// Center-on-receiver button (below zoom controls)
+const CenterControl = L.Control.extend({
+  options: { position: 'topleft' },
+  onAdd() {
+    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+    const btn = L.DomUtil.create('a', 'leaflet-center-btn', container);
+    btn.innerHTML = '⊕';
+    btn.href = '#';
+    btn.title = 'Center on receiver';
+    L.DomEvent.disableClickPropagation(btn);
+    L.DomEvent.on(btn, 'click', e => {
+      L.DomEvent.preventDefault(e);
+      if (receiverPos && receiverPos.lat) {
+        map.setView([receiverPos.lat, receiverPos.lon], map.getZoom());
+      }
+    });
+    return container;
+  },
+});
+new CenterControl().addTo(map);
+
 // ─── Icons ───────────────────────────────────────────────────────────────────
 function makeIcon(ac) {
   const def   = ICON_DEFS[ac.icon_type] || ICON_DEFS.generic;

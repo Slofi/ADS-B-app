@@ -270,6 +270,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .leaflet-bar { border: 1px solid var(--border2) !important; box-shadow: none !important; }
 .leaflet-bar a:first-child { border-radius: 7px 7px 0 0 !important; }
 .leaflet-bar a:last-child  { border-radius: 0 0 7px 7px !important; }
+.leaflet-bar a:only-child  { border-radius: 7px !important; }
 
 /* Emergency pulse on map icon */
 @keyframes emerg-pulse {
