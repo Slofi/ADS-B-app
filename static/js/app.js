@@ -605,6 +605,50 @@ async function setGpsSource(source) {
   } catch(e) {}
 }
 
+let _pickingLocation = false;
+
+function startLocationPick() {
+  if (_pickingLocation) return;
+  _pickingLocation = true;
+  el('settings').classList.add('hidden');
+  el('pick-hint').style.display = '';
+  map.getContainer().style.cursor = 'crosshair';
+  map.once('click', _onPickLocation);
+  document.addEventListener('keydown', _cancelLocationPick);
+}
+
+function _onPickLocation(e) {
+  _pickingLocation = false;
+  el('pick-hint').style.display = 'none';
+  map.getContainer().style.cursor = '';
+  document.removeEventListener('keydown', _cancelLocationPick);
+
+  const lat = e.latlng.lat;
+  const lon = e.latlng.lng;
+  const latEl = el('pos-lat'); const lonEl = el('pos-lon');
+  if (latEl) latEl.value = lat.toFixed(6);
+  if (lonEl) lonEl.value = lon.toFixed(6);
+
+  fetch('/api/receiver', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ source: 'manual', lat, lon }),
+  }).catch(() => {});
+
+  receiverPos = { lat, lon };
+  updateReceiverMarker(receiverPos);
+  drawRings();
+  map.setView([lat, lon], Math.max(map.getZoom(), 9));
+}
+
+function _cancelLocationPick(e) {
+  if (e.key !== 'Escape') return;
+  _pickingLocation = false;
+  el('pick-hint').style.display = 'none';
+  map.getContainer().style.cursor = '';
+  map.off('click', _onPickLocation);
+  document.removeEventListener('keydown', _cancelLocationPick);
+}
+
 async function applyManualPos() {
   const lat = parseFloat(el('pos-lat').value);
   const lon = parseFloat(el('pos-lon').value);
