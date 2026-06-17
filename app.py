@@ -262,12 +262,21 @@ def get_aircraft():
 
     # Stats
     farthest = None
+    closest  = None
     max_dist = 0.0
+    min_dist = float('inf')
     for ac in active:
         d = ac.get('distance') or 0
         if d > max_dist:
             max_dist = d
             farthest = {
+                'hex':      ac['hex'],
+                'flight':   ac.get('flight') or ac.get('registration') or ac['hex'],
+                'distance': d,
+            }
+        if d > 0 and d < min_dist:
+            min_dist = d
+            closest = {
                 'hex':      ac['hex'],
                 'flight':   ac.get('flight') or ac.get('registration') or ac['hex'],
                 'distance': d,
@@ -282,6 +291,7 @@ def get_aircraft():
         'stats': {
             'active_count':  len(active),
             'history_count': len(history),
+            'closest':       closest,
             'farthest':      farthest,
         },
         'timestamp': time.time(),

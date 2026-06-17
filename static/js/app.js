@@ -513,12 +513,10 @@ async function poll() {
       startBtn.textContent = d.dump1090_running ? 'Running' : 'Start';
     }
     el('stat-count').textContent = `${d.stats.active_count} aircraft`;
-    if (d.stats.farthest) {
-      const f = d.stats.farthest;
-      el('stat-farthest').textContent = `farthest: ${f.flight} ${f.distance} km`;
-    } else {
-      el('stat-farthest').textContent = '';
-    }
+    const parts = [];
+    if (d.stats.closest)  parts.push(`closest: ${d.stats.closest.flight} ${d.stats.closest.distance} km`);
+    if (d.stats.farthest) parts.push(`farthest: ${d.stats.farthest.flight} ${d.stats.farthest.distance} km`);
+    el('stat-range').textContent = parts.join(' | ');
 
     // Active aircraft
     const newActive = {};
