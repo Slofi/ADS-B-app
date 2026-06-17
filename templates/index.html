@@ -35,30 +35,34 @@
   <!-- Right panel -->
   <div id="panel">
     <div class="panel-tabs">
-      <button class="tab-btn active" id="tab-active" onclick="switchTab('active')">Active <span id="badge-active" class="tab-badge">0</span></button>
-      <button class="tab-btn" id="tab-history" onclick="switchTab('history')">History <span id="badge-history" class="tab-badge">0</span></button>
+      <button class="tab-btn active" id="tab-active"  onclick="switchTab('active')">Active <span id="badge-active" class="tab-badge">0</span></button>
+      <button class="tab-btn"        id="tab-history" onclick="switchTab('history')">History <span id="badge-history" class="tab-badge">0</span></button>
     </div>
     <div id="ac-list"></div>
   </div>
 </div>
 
-
 <!-- Settings panel -->
 <div id="settings" class="settings hidden">
+
   <div class="settings-header">
     <span class="settings-title-text">Settings</span>
+    <button class="set-close-btn" onclick="toggleSettings()">✕</button>
   </div>
 
+  <!-- Aircraft DB -->
   <div class="set-section">Aircraft DB</div>
   <div class="set-row">
     <span id="db-version-label">Loading…</span>
     <button class="set-btn" onclick="updateDb()" id="db-update-btn">Update</button>
   </div>
-  <div id="db-status-msg" style="font-size:11px;color:var(--muted);padding:0 0 6px 0 14px"></div>
+  <div id="db-status-msg" style="font-size:0.8rem;color:var(--muted);padding:0 14px 6px"></div>
 
+  <!-- Map Layer -->
   <div class="set-section">Map Layer</div>
   <div id="layer-picker"></div>
 
+  <!-- Display -->
   <div class="set-section">Display</div>
   <div class="set-row">
     <span>Range rings</span>
@@ -71,45 +75,49 @@
   </div>
   <div class="set-row">
     <span>Accent color</span>
-    <input type="color" id="accent-input" value="#e8b04f" onchange="setAccent(this.value)" style="cursor:pointer;border:none;background:none;width:36px;height:28px">
+    <input type="color" id="accent-input" value="#e8b04f" onchange="setAccent(this.value)"
+           style="cursor:pointer;border:none;background:none;width:40px;height:32px">
   </div>
 
+  <!-- Position -->
   <div class="set-section">Position</div>
-  <div style="display:flex;gap:6px;padding:6px 14px 10px;flex-wrap:wrap">
+  <div class="rings-opts">
     <button class="ring-chip active" id="pos-auto"   onclick="setGpsSource('auto')">Auto</button>
     <button class="ring-chip"        id="pos-opstoc" onclick="setGpsSource('opstoc')">OPS-TOC</button>
     <button class="ring-chip"        id="pos-om"     onclick="setGpsSource('om')">OM</button>
     <button class="ring-chip"        id="pos-manual" onclick="setGpsSource('manual')">Manual</button>
   </div>
-  <div id="pos-status" style="font-size:11px;color:var(--muted);padding:0 14px 8px"></div>
-  <div id="pos-manual-inputs" style="display:none;padding:0 14px 10px;flex-direction:column;gap:6px">
-    <div style="display:flex;gap:6px">
+  <div id="pos-status" style="font-size:0.8rem;color:var(--muted);padding:0 14px 8px"></div>
+  <div id="pos-manual-inputs" style="display:none;padding:0 14px 12px;flex-direction:column;gap:8px">
+    <div style="display:flex;gap:8px">
       <input id="pos-lat" class="layer-key-input" type="number" step="0.000001" placeholder="Latitude"  style="flex:1">
       <input id="pos-lon" class="layer-key-input" type="number" step="0.000001" placeholder="Longitude" style="flex:1">
     </div>
-    <div style="display:flex;gap:6px">
+    <div style="display:flex;gap:8px">
       <button class="set-btn" style="flex:1" onclick="startLocationPick()">Pick on map</button>
       <button class="set-btn" style="flex:1" onclick="applyManualPos()">Apply &amp; Center</button>
     </div>
   </div>
 
+  <!-- App -->
   <div class="set-section">App</div>
-  <div class="set-row" style="padding-bottom:2px">
-    <span id="app-version" style="font-size:11px;color:var(--muted)">…</span>
+  <div class="set-row" style="padding-bottom:4px">
+    <span id="app-version" style="font-size:0.8rem;color:var(--muted)">…</span>
   </div>
-  <div class="set-row" style="gap:6px">
-    <button class="set-btn" onclick="checkUpdate()" id="check-update-btn">Check</button>
+  <div class="set-btns">
+    <button class="set-btn" onclick="checkUpdate()" id="check-update-btn">Check for update</button>
     <button class="set-btn" onclick="updateApp()">Pull &amp; restart</button>
   </div>
-  <div id="update-msg" style="font-size:11px;padding:2px 14px 6px"></div>
-  <div class="set-row" style="gap:6px">
+  <div id="update-msg" style="font-size:0.8rem;padding:2px 14px 8px"></div>
+  <div class="set-btns">
     <button class="set-btn" onclick="appRestart()">Restart app</button>
     <button class="set-btn danger" onclick="appShutdown()">Shutdown</button>
   </div>
+
 </div>
 
 <!-- Pick-location hint bar -->
-<div id="pick-hint" style="display:none;position:fixed;top:calc(var(--header-h) + 12px);left:50%;transform:translateX(-50%);background:rgba(13,17,23,0.94);border:1px solid var(--accent-border);border-radius:10px;padding:11px 20px;font-size:0.88rem;color:var(--accent);z-index:2000;pointer-events:none;letter-spacing:0.03em;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.5)">
+<div id="pick-hint" style="display:none;position:fixed;top:calc(var(--header-h) + 12px);left:50%;transform:translateX(-50%);background:rgba(13,17,23,0.94);border:1px solid var(--accent-border);border-radius:10px;padding:12px 22px;font-size:0.9rem;color:var(--accent);z-index:2000;pointer-events:none;letter-spacing:0.03em;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.5)">
   Tap map to place receiver · Esc to cancel
 </div>
 

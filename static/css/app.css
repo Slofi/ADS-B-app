@@ -14,11 +14,12 @@
   --muted:         #7a8aaa;
   --red:           #ff5050;
   --green:         #3ddc84;
-  --header-h:      60px;
-  --panel-w:       330px;
+  --header-h:      66px;
+  --panel-w:       340px;
+  --radius:        9px;
 }
 
-html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; font-size: 15px; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; font-size: 16px; }
 
 /* ─── Header ────────────────────────────────────────────────── */
 #header {
@@ -29,10 +30,10 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   padding: 0 14px; z-index: 1000; gap: 10px;
 }
 .header-left  { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.header-right { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
 
 .app-title { font-size: 1rem; font-weight: 600; color: var(--accent); letter-spacing: 0.04em; white-space: nowrap; }
-.header-stat { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+.header-stat { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
 .header-sep  { color: var(--border2); }
 
 .status-dot {
@@ -43,13 +44,14 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .status-dot.off { background: var(--red);   box-shadow: 0 0 6px rgba(255,80,80,0.5); }
 
 .hdr-clock {
-  font-size: 0.88rem; font-weight: 600; color: var(--muted);
+  font-size: 0.92rem; font-weight: 600; color: var(--muted);
   letter-spacing: 0.05em; white-space: nowrap; font-variant-numeric: tabular-nums;
 }
 
+/* Header buttons — all same shape, clear touch targets */
 .hdr-btn {
-  background: none; border: 1px solid var(--border); border-radius: 8px;
-  color: var(--muted); cursor: pointer; padding: 9px 16px; font-size: 0.88rem;
+  background: none; border: 1px solid var(--border); border-radius: var(--radius);
+  color: var(--muted); cursor: pointer; padding: 10px 18px; font-size: 0.9rem;
   transition: color 0.15s, border-color 0.15s, background 0.15s; line-height: 1;
   white-space: nowrap;
 }
@@ -75,7 +77,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 }
 .tab-btn {
   flex: 1; background: none; border: none; color: var(--muted);
-  padding: 14px 8px; cursor: pointer; font-size: 0.82rem; font-weight: 500;
+  padding: 16px 8px; cursor: pointer; font-size: 0.85rem; font-weight: 500;
   letter-spacing: 0.04em; text-transform: uppercase;
   border-bottom: 2px solid transparent; margin-bottom: -1px;
   transition: color 0.15s, border-color 0.15s;
@@ -83,7 +85,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .tab-btn.active { color: var(--accent); border-color: var(--accent); }
 .tab-badge {
   display: inline-block; background: var(--bg3); border-radius: 8px;
-  padding: 1px 7px; font-size: 10px; margin-left: 4px; color: var(--muted);
+  padding: 2px 7px; font-size: 11px; margin-left: 4px; color: var(--muted);
 }
 .tab-btn.active .tab-badge { background: var(--accent-dim); color: var(--accent); }
 
@@ -94,7 +96,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 /* ─── Aircraft list row ─────────────────────────────────────── */
 .ac-row {
   display: flex; align-items: center; gap: 10px;
-  padding: 11px 12px; border-bottom: 1px solid var(--border);
+  padding: 12px 14px; border-bottom: 1px solid var(--border);
   cursor: pointer; transition: background 0.12s;
   position: relative;
 }
@@ -108,13 +110,13 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .ac-icon-wrap svg { display: block; }
 
 .ac-info { flex: 1; min-width: 0; }
-.ac-callsign { font-size: 0.88rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ac-sub      { font-size: 0.76rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.ac-callsign { font-size: 0.9rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ac-sub      { font-size: 0.78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 
 .ac-right { text-align: right; flex-shrink: 0; }
-.ac-alt   { font-size: 0.84rem; font-weight: 500; }
-.ac-dist  { font-size: 0.76rem; color: var(--muted); margin-top: 2px; }
-.ac-vr    { font-size: 0.72rem; }
+.ac-alt   { font-size: 0.86rem; font-weight: 500; }
+.ac-dist  { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+.ac-vr    { font-size: 0.74rem; }
 
 .mil-badge {
   font-size: 9px; background: rgba(56,189,248,0.2); color: #38bdf8;
@@ -127,100 +129,117 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   padding: 1px 4px; margin-left: 4px;
 }
 
-.list-empty { padding: 28px 16px; color: var(--muted); font-size: 0.85rem; text-align: center; }
+.list-empty { padding: 32px 16px; color: var(--muted); font-size: 0.88rem; text-align: center; }
 
 /* ─── Expanded list row ─────────────────────────────────────── */
 .ac-expanded {
   background: var(--bg3); border-bottom: 1px solid var(--border);
-  padding: 10px 12px 12px;
+  padding: 10px 14px 14px;
 }
 .ac-expanded.emergency { border-left: 3px solid rgba(255,34,34,0.5); }
-.exp-type { font-size: 0.76rem; color: var(--accent); margin-bottom: 8px; }
+.exp-type { font-size: 0.78rem; color: var(--accent); margin-bottom: 8px; }
 .exp-grid {
   display: grid; grid-template-columns: 1fr 1fr;
-  gap: 7px 10px; margin-bottom: 10px;
+  gap: 8px 12px; margin-bottom: 12px;
 }
 .exp-cell { display: flex; flex-direction: column; gap: 1px; }
 .exp-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.exp-value { font-size: 0.84rem; font-weight: 500; color: var(--text); }
+.exp-value { font-size: 0.86rem; font-weight: 500; color: var(--text); }
 .exp-btns  { display: flex; gap: 8px; }
 .exp-btn {
-  flex: 1; padding: 11px; background: var(--bg2); border: 1px solid var(--border2);
-  border-radius: 8px; color: var(--text); cursor: pointer; font-size: 0.84rem;
+  flex: 1; padding: 13px; background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--radius); color: var(--text); cursor: pointer; font-size: 0.88rem;
   transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 .exp-btn:hover  { background: var(--accent-dim); border-color: var(--accent-border); color: var(--accent); }
 .exp-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 .exp-emergency {
-  margin-top: 8px;
+  margin-top: 10px;
   background: rgba(255,34,34,0.18); border: 1px solid rgba(255,34,34,0.5);
-  border-radius: 8px; padding: 8px 12px; text-align: center;
-  color: #ff4444; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.06em;
+  border-radius: var(--radius); padding: 9px 12px; text-align: center;
+  color: #ff4444; font-size: 0.84rem; font-weight: 600; letter-spacing: 0.06em;
   animation: emerg-row 0.7s ease-in-out infinite alternate;
 }
 
-/* ─── Settings ──────────────────────────────────────────────── */
+/* ─── Settings panel ────────────────────────────────────────── */
 .settings {
   position: fixed; right: calc(var(--panel-w) + 10px); top: calc(var(--header-h) + 10px);
-  width: 290px; background: var(--bg2);
+  width: 310px; background: var(--bg2);
   border: 1px solid var(--border2); border-radius: 14px;
-  z-index: 1500; padding: 0 0 12px;
+  z-index: 1500; padding: 0 0 14px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.5);
   max-height: calc(100vh - var(--header-h) - 20px); overflow-y: auto;
 }
 .settings.hidden { display: none; }
+
 .settings-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 14px 10px; border-bottom: 1px solid var(--border);
+  padding: 13px 14px 11px; border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--bg2); z-index: 1;
 }
-.settings-title-text { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--accent); }
-.settings-hdr-btns { display: flex; gap: 4px; }
-.set-hdr-btn {
-  background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px;
-  color: var(--muted); cursor: pointer; padding: 6px 11px; font-size: 0.82rem; line-height: 1;
+.settings-title-text { font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--accent); }
+
+/* Close button in settings header */
+.set-close-btn {
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: 7px;
+  color: var(--muted); cursor: pointer; padding: 6px 12px; font-size: 0.9rem; line-height: 1;
   transition: all 0.12s;
 }
-.set-hdr-btn:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-border); }
-.set-hdr-btn.danger:hover { background: rgba(255,80,80,0.15); color: var(--red); border-color: rgba(255,80,80,0.4); }
-.set-section { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); padding: 12px 14px 4px; }
-.set-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; gap: 8px; font-size: 0.85rem; color: var(--text); }
+.set-close-btn:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-border); }
+
+/* Section heading */
+.set-section { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 14px 14px 5px; }
+
+/* Label + control row (e.g. toggle rows, label + single button) */
+.set-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; gap: 10px; font-size: 0.9rem; color: var(--text); }
+
+/* Standard settings button */
 .set-btn {
-  background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px;
-  color: var(--text); cursor: pointer; padding: 8px 14px; font-size: 0.8rem;
-  transition: background 0.12s, color 0.12s;
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius);
+  color: var(--text); cursor: pointer; padding: 10px 16px; font-size: 0.88rem;
+  transition: background 0.12s, color 0.12s, border-color 0.12s; line-height: 1;
 }
 .set-btn:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-border); }
 .set-btn.danger:hover { background: rgba(255,80,80,0.15); color: var(--red); border-color: rgba(255,80,80,0.4); }
 
-/* Layer picker */
+/* Full-width button row (used in App section and manual position) */
+.set-btns { display: flex; gap: 8px; padding: 4px 14px 10px; }
+.set-btns .set-btn { flex: 1; text-align: center; }
+
+/* ─── Layer picker ──────────────────────────────────────────── */
 .layer-opt {
-  padding: 10px 14px; font-size: 0.85rem; color: var(--muted);
+  padding: 12px 16px; font-size: 0.88rem; color: var(--muted);
   cursor: pointer; transition: background 0.12s, color 0.12s;
 }
 .layer-opt:hover  { background: var(--bg3); color: var(--text); }
 .layer-opt.active { color: var(--accent); background: var(--accent-dim); }
 .layer-key-input {
-  background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px;
-  padding: 7px 10px; color: var(--text); font-size: 0.8rem; width: 100%;
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: 7px;
+  padding: 10px 12px; color: var(--text); font-size: 0.88rem; width: 100%;
 }
 
-/* Ring distance chips */
-.rings-opts { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 14px 10px; }
+/* ─── Ring distance chips ───────────────────────────────────── */
+.rings-opts { display: flex; flex-wrap: wrap; gap: 7px; padding: 6px 14px 12px; }
 .ring-chip {
-  background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px;
-  color: var(--muted); cursor: pointer; padding: 6px 12px; font-size: 0.78rem;
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: 7px;
+  color: var(--muted); cursor: pointer; padding: 8px 14px; font-size: 0.82rem;
   transition: all 0.12s;
 }
 .ring-chip.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-border); }
 .ring-chip:hover  { border-color: var(--accent-border); color: var(--text); }
 
-/* Toggle switch */
-.toggle { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+/* ─── Toggle switch ─────────────────────────────────────────── */
+.toggle { position: relative; display: inline-block; width: 50px; height: 28px; flex-shrink: 0; }
 .toggle input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; inset: 0; background: var(--bg3); border-radius: 24px; border: 1px solid var(--border2); cursor: pointer; transition: 0.2s; }
-.slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; top: 3px; background: var(--muted); border-radius: 50%; transition: 0.2s; }
+.slider { position: absolute; inset: 0; background: var(--bg3); border-radius: 28px; border: 1px solid var(--border2); cursor: pointer; transition: 0.2s; }
+.slider::before { content: ''; position: absolute; width: 20px; height: 20px; left: 3px; top: 4px; background: var(--muted); border-radius: 50%; transition: 0.2s; }
 .toggle input:checked + .slider { background: var(--accent-dim); border-color: var(--accent); }
-.toggle input:checked + .slider::before { transform: translateX(20px); background: var(--accent); }
+.toggle input:checked + .slider::before { transform: translateX(22px); background: var(--accent); }
+
+/* ─── Position status ───────────────────────────────────────── */
+.pos-status-text {
+  font-size: 0.8rem; color: var(--muted); padding: 0 14px 8px;
+}
 
 /* ─── Leaflet overrides ─────────────────────────────────────── */
 .leaflet-container { background: #0d1117; }
