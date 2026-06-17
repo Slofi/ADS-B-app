@@ -19,6 +19,9 @@
     <span class="header-stat" id="stat-farthest"></span>
   </div>
   <div class="header-right">
+    <button class="hdr-btn" onclick="d1090Action('start')" title="Start dump1090">▶</button>
+    <button class="hdr-btn" onclick="d1090Action('restart')" title="Restart dump1090">↺</button>
+    <button class="hdr-btn hdr-btn-danger" onclick="d1090Action('stop')" title="Stop dump1090">■</button>
     <button class="hdr-btn" id="rings-btn" onclick="toggleRings()" title="Range rings">⊙</button>
     <button class="hdr-btn" id="gear-btn" onclick="toggleSettings()" title="Settings">⚙</button>
   </div>
@@ -60,11 +63,6 @@
 <div id="settings" class="settings hidden">
   <div class="settings-header">
     <span class="settings-title-text">Settings</span>
-    <div class="settings-hdr-btns">
-      <button class="set-hdr-btn" onclick="d1090Action('start')" title="Start dump1090">▶</button>
-      <button class="set-hdr-btn" onclick="d1090Action('restart')" title="Restart dump1090">↺</button>
-      <button class="set-hdr-btn danger" onclick="d1090Action('stop')" title="Stop dump1090">■</button>
-    </div>
   </div>
 
   <div class="set-section">Aircraft DB</div>

@@ -48,6 +48,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   transition: color 0.15s, border-color 0.15s, background 0.15s; line-height: 1;
 }
 .hdr-btn:hover, .hdr-btn.active { color: var(--accent); border-color: var(--accent-border); background: var(--accent-dim); }
+.hdr-btn-danger:hover { color: var(--red) !important; border-color: rgba(255,80,80,0.4) !important; background: rgba(255,80,80,0.12) !important; }
 
 /* ─── Main layout ───────────────────────────────────────────── */
 #main {
