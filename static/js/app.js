@@ -380,6 +380,8 @@ function selectAircraft(hex) {
 function buildExpanded(ac) {
   const followActive = followHex === ac.hex;
   const rows = [
+    ['Airline',    ac.airline   || '—'],
+    ['Country',    ac.country   || '—'],
     ['Altitude',   fmtAlt(ac.altitude)],
     ['Speed',      fmtSpd(ac.speed)],
     ['Heading',    fmtHdg(ac.track)],
@@ -460,7 +462,11 @@ function renderList() {
 
   list.innerHTML = sorted.map(ac => {
     const label  = ac.flight || ac.registration || ac.hex.toUpperCase();
-    const sub    = [ac.type_name || ac.type_code, ac.registration && ac.flight ? ac.registration : ''].filter(Boolean).join(' · ');
+    const sub    = [
+      ac.airline || null,
+      ac.type_name || ac.type_code || null,
+      (ac.registration && ac.flight) ? ac.registration : null,
+    ].filter(Boolean).join(' · ');
     const color  = altColor(ac.altitude, ac.is_military, ac.emergency);
     const vr     = fmtVr(ac.vert_rate);
     const vrColor  = ac.vert_rate > 100 ? '#3ddc84' : ac.vert_rate < -100 ? '#ff8080' : 'var(--muted)';
@@ -703,7 +709,7 @@ async function loadDbStatus() {
   try {
     const d = await (await fetch('/api/db/status')).json();
     el('db-version-label').textContent = d.version
-      ? `DB: ${d.version} (${(d.aircraft_count/1000).toFixed(0)}k ac)`
+      ? `DB: ${d.version} · ${(d.aircraft_count/1000).toFixed(0)}k ac · ${d.operator_count || 0} airlines`
       : 'DB: not loaded';
   } catch(e) {
     el('db-version-label').textContent = 'DB: error';

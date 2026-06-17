@@ -25,9 +25,10 @@ RECEIVER_JSON   = '/run/dump1090-mutability/receiver.json'
 DB_FILE         = '/home/slofi/intercept/data/adsb/aircraft_db.json'
 DB_META_FILE    = '/home/slofi/intercept/data/adsb/aircraft_db_meta.json'
 
-AIRCRAFT_DB_URL = 'https://raw.githubusercontent.com/Mictronics/readsb-protobuf/dev/webapp/src/db/aircrafts.json'
-TYPES_DB_URL    = 'https://raw.githubusercontent.com/Mictronics/readsb-protobuf/dev/webapp/src/db/types.json'
-GITHUB_API_URL  = 'https://api.github.com/repos/Mictronics/readsb-protobuf/commits?path=webapp/src/db/aircrafts.json&per_page=1'
+AIRCRAFT_DB_URL  = 'https://raw.githubusercontent.com/Mictronics/readsb-protobuf/dev/webapp/src/db/aircrafts.json'
+TYPES_DB_URL     = 'https://raw.githubusercontent.com/Mictronics/readsb-protobuf/dev/webapp/src/db/types.json'
+OPERATORS_DB_URL = 'https://raw.githubusercontent.com/Mictronics/readsb-protobuf/dev/webapp/src/db/operators.json'
+GITHUB_API_URL   = 'https://api.github.com/repos/Mictronics/readsb-protobuf/commits?path=webapp/src/db/aircrafts.json&per_page=1'
 
 POLL_INTERVAL   = 1.0    # seconds between aircraft.json reads
 GONE_TIMEOUT    = 60.0   # seconds before gone aircraft moves to history
@@ -51,26 +52,76 @@ _manual_receiver  = None # {lat, lon} — overrides dump1090 when set
 _gps_source       = 'auto'  # 'auto' | 'opstoc' | 'om' | 'manual'
 _gps_status       = {}       # {sats, fix, alt} from external GPS source
 
-_db_aircraft: dict = {}
-_db_types:    dict = {}
-_db_loaded    = False
+_db_aircraft:  dict = {}
+_db_types:     dict = {}
+_db_operators: dict = {}
+_db_loaded     = False
 
 # ---------------------------------------------------------------------------
 # Aircraft DB
 # ---------------------------------------------------------------------------
 def _load_db() -> bool:
-    global _db_aircraft, _db_types, _db_loaded
+    global _db_aircraft, _db_types, _db_operators, _db_loaded
     if not os.path.exists(DB_FILE):
         return False
     try:
         with open(DB_FILE) as f:
             d = json.load(f)
-        _db_aircraft = d.get('aircraft', {})
-        _db_types    = d.get('types', {})
-        _db_loaded   = True
+        _db_aircraft  = d.get('aircraft', {})
+        _db_types     = d.get('types', {})
+        _db_operators = d.get('operators', {})
+        _db_loaded    = True
         return True
     except Exception:
         return False
+
+# Registration prefix → country name (longest match wins)
+_REG_COUNTRY: dict = {
+    'OE': 'Austria',        'OK': 'Czech Republic', 'OM': 'Slovakia',
+    'OO': 'Belgium',        'OY': 'Denmark',        'PH': 'Netherlands',
+    'SP': 'Poland',         'SE': 'Sweden',         'OH': 'Finland',
+    'LN': 'Norway',         'LX': 'Luxembourg',     'LY': 'Lithuania',
+    'LZ': 'Bulgaria',       'CS': 'Portugal',       'EC': 'Spain',
+    'EI': 'Ireland',        'HA': 'Hungary',        'HB': 'Switzerland',
+    'HZ': 'Saudi Arabia',   'TC': 'Turkey',         'TF': 'Iceland',
+    'UR': 'Ukraine',        'YR': 'Romania',        'YU': 'Serbia',
+    'YL': 'Latvia',         'ES': 'Estonia',        'SX': 'Greece',
+    'S5': 'Slovenia',       '9A': 'Croatia',        '9H': 'Malta',
+    'JA': 'Japan',          'HL': 'South Korea',    'VH': 'Australia',
+    'ZS': 'South Africa',   'A6': 'UAE',            'A7': 'Qatar',
+    'AP': 'Pakistan',       'PK': 'Indonesia',      'VT': 'India',
+    'HS': 'Thailand',       'VN': 'Vietnam',        '9V': 'Singapore',
+    '9M': 'Malaysia',       'ZK': 'New Zealand',    'RA': 'Russia',
+    'EW': 'Belarus',        'UK': 'Uzbekistan',     'UN': 'Kazakhstan',
+    'EK': 'Armenia',        'EY': 'Tajikistan',     'EZ': 'Turkmenistan',
+    'EX': 'Kyrgyzstan',     'UP': 'Kazakhstan',     'ER': 'Moldova',
+    'SU': 'Egypt',          'ET': 'Ethiopia',       '5B': 'Cyprus',
+    'HK': 'Colombia',       'LV': 'Argentina',      'XA': 'Mexico',
+    'XB': 'Mexico',         '4X': 'Israel',         'JY': 'Jordan',
+    'OD': 'Lebanon',        '9K': 'Kuwait',
+    # Single-letter prefixes (checked last)
+    'D': 'Germany',         'F': 'France',          'G': 'United Kingdom',
+    'I': 'Italy',           'N': 'United States',   'C': 'Canada',
+    'B': 'China',           'R': 'Russia',
+}
+
+def _reg_country(reg: str) -> str:
+    if not reg:
+        return ''
+    prefix = reg.split('-')[0] if '-' in reg else reg[:2]
+    for length in (len(prefix), 2, 1):
+        p = prefix[:length]
+        if p in _REG_COUNTRY:
+            return _REG_COUNTRY[p]
+    return ''
+
+def _operator_name(callsign: str) -> str:
+    if not callsign or not _db_operators:
+        return ''
+    op = _db_operators.get(callsign[:3].upper())
+    if op and isinstance(op, list) and op:
+        return op[0]
+    return ''
 
 def _db_lookup(hex_code: str) -> dict:
     if not _db_loaded:
@@ -108,6 +159,7 @@ def _db_lookup(hex_code: str) -> dict:
         'size':         size,
         'icon_type':    icon_type,
         'is_military':  flags == '10',
+        'country':      _reg_country(reg),
     }
 
 # ---------------------------------------------------------------------------
@@ -151,6 +203,8 @@ def _new_aircraft(hex_code: str, now: float) -> dict:
         'size':         info.get('size', ''),
         'icon_type':    info.get('icon_type', 'generic'),
         'is_military':  info.get('is_military', False),
+        'country':      info.get('country', ''),
+        'airline':      '',
         'emergency':    False,
         'track_points': [],   # [[lat, lon, alt], ...]
         'first_seen':   now,
@@ -208,7 +262,12 @@ def _update_state():
 
             # Update scalar fields
             if ac.get('flight'):
-                obj['flight'] = ac['flight'].strip()
+                flight = ac['flight'].strip()
+                if flight != obj['flight']:
+                    obj['flight']  = flight
+                    obj['airline'] = _operator_name(flight)
+                elif not obj['airline'] and flight:
+                    obj['airline'] = _operator_name(flight)
             for fld in ('lat', 'lon', 'altitude', 'speed', 'track',
                         'vert_rate', 'squawk', 'rssi', 'messages'):
                 if ac.get(fld) is not None:
@@ -322,10 +381,11 @@ def db_status():
         except Exception:
             pass
     return jsonify({
-        'loaded':          _db_loaded,
-        'aircraft_count':  len(_db_aircraft),
-        'version':         meta.get('version'),
-        'downloaded':      meta.get('downloaded'),
+        'loaded':           _db_loaded,
+        'aircraft_count':   len(_db_aircraft),
+        'operator_count':   len(_db_operators),
+        'version':          meta.get('version'),
+        'downloaded':       meta.get('downloaded'),
     })
 
 @app.route('/api/version')
@@ -420,9 +480,10 @@ def db_update():
         with urllib.request.urlopen(req, timeout=60) as r:
             return json.loads(r.read().decode('utf-8'))
     try:
-        aircraft_data = fetch(AIRCRAFT_DB_URL)
-        types_data    = fetch(TYPES_DB_URL)
-        combined      = {'aircraft': aircraft_data, 'types': types_data}
+        aircraft_data  = fetch(AIRCRAFT_DB_URL)
+        types_data     = fetch(TYPES_DB_URL)
+        operators_data = fetch(OPERATORS_DB_URL)
+        combined = {'aircraft': aircraft_data, 'types': types_data, 'operators': operators_data}
 
         with open(DB_FILE, 'w') as f:
             json.dump(combined, f, separators=(',', ':'))
