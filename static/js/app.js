@@ -672,6 +672,16 @@ function setAccent(hex) {
 // ─── Utils ───────────────────────────────────────────────────────────────────
 function el(id) { return document.getElementById(id); }
 
+// ─── Clock ───────────────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const s = String(now.getSeconds()).padStart(2, '0');
+  const clockEl = el('hdr-clock');
+  if (clockEl) clockEl.textContent = `${h}:${m}:${s}`;
+}
+
 // ─── Boot ────────────────────────────────────────────────────────────────────
 (function init() {
   const saved = localStorage.getItem('adsb_accent');
@@ -684,5 +694,7 @@ function el(id) { return document.getElementById(id); }
   // Rings toggle state
   el('rings-btn').classList.toggle('active', showRings);
 
+  updateClock();
+  setInterval(updateClock, 1000);
   poll();
 })();
