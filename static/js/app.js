@@ -350,7 +350,6 @@ function toggleRings() {
   showRings = cb ? cb.checked : !showRings;
   if (cb && !showRings) cb.checked = false;
   if (cb && showRings)  cb.checked = true;
-  document.getElementById('rings-btn').classList.toggle('active', showRings);
   drawRings();
 }
 
@@ -608,7 +607,6 @@ let _pickingLocation = false;
 function startLocationPick() {
   if (_pickingLocation) return;
   _pickingLocation = true;
-  el('settings').classList.add('hidden');
   el('pick-hint').style.display = '';
   map.getContainer().style.cursor = 'crosshair';
   map.once('click', _onPickLocation);
@@ -794,9 +792,6 @@ function updateClock() {
     const inp = el('accent-input');
     if (inp) inp.value = saved;
   }
-
-  // Rings toggle state
-  el('rings-btn').classList.toggle('active', showRings);
 
   // Restore saved GPS source preference to backend
   const savedGpsSrc = localStorage.getItem('adsb_gps_source') || 'auto';
