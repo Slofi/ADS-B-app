@@ -61,6 +61,13 @@ function fmtVr(vr) {
   return vr > 0 ? '▲' : '▼';
 }
 function fmtHdg(t) { return t != null ? t + '°' : '—'; }
+function fmtConfig(cfg) {
+  if (!cfg || cfg.length < 3) return null;
+  const engineType = { J: 'jet', T: 'turboprop', P: 'piston', E: 'electric', R: 'rocket' };
+  const count = cfg.slice(1, -1);
+  const type  = engineType[cfg.slice(-1)] || cfg.slice(-1).toLowerCase();
+  return `${count}-engine ${type}`;
+}
 function fmtAge(ts) {
   const s = Math.round(Date.now() / 1000 - ts);
   if (s < 60)  return s + 's ago';
@@ -380,8 +387,9 @@ function selectAircraft(hex) {
 function buildExpanded(ac) {
   const followActive = followHex === ac.hex;
   const rows = [
-    ['Airline',    ac.airline   || '—'],
-    ['Country',    ac.country   || '—'],
+    ['Airline',    ac.airline              || '—'],
+    ['Country',    ac.country              || '—'],
+    ['Engines',    fmtConfig(ac.config)    || '—'],
     ['Altitude',   fmtAlt(ac.altitude)],
     ['Speed',      fmtSpd(ac.speed)],
     ['Heading',    fmtHdg(ac.track)],
