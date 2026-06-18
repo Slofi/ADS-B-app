@@ -51,8 +51,9 @@ function altColor(altitude, isMilitary, emergency) {
 
 function fmtAlt(alt) {
   if (alt == null) return '—';
-  if (alt >= 18000) return 'FL' + Math.round(alt / 100).toString().padStart(3, '0');
-  return alt.toLocaleString() + ' ft';
+  const m = Math.round(alt * 0.3048).toLocaleString();
+  if (alt >= 18000) return 'FL' + Math.round(alt / 100).toString().padStart(3, '0') + ' / ' + m + ' m';
+  return alt.toLocaleString() + ' ft / ' + m + ' m';
 }
 function fmtSpd(spd) { return spd != null ? spd + ' kt' : '—'; }
 function fmtDist(d)  { return d != null ? d + ' km' : '—'; }
