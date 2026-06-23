@@ -760,14 +760,62 @@ function _showSplash(msg) {
   document.body.appendChild(d);
 }
 
+function _confirmAction({ title, message, confirmText, danger = false }) {
+  return new Promise(resolve => {
+    const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.68);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;font-family:system-ui,sans-serif';
+    overlay.innerHTML = `<div style="width:min(360px,calc(100vw - 36px));background:var(--bg2);border:1px solid var(--border2);border-radius:14px;box-shadow:0 14px 48px rgba(0,0,0,0.55);overflow:hidden">
+      <div style="padding:18px 18px 12px;border-bottom:1px solid var(--border)">
+        <div style="font-size:0.82rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);font-weight:700">ADS-B</div>
+        <div style="margin-top:8px;font-size:1.05rem;color:var(--text);font-weight:650">${esc(title)}</div>
+      </div>
+      <div style="padding:16px 18px;color:var(--muted);font-size:0.9rem;line-height:1.45">${esc(message)}</div>
+      <div style="display:flex;gap:10px;padding:0 18px 18px">
+        <button data-action="cancel" class="set-btn" style="flex:1">Cancel</button>
+        <button data-action="confirm" class="set-btn${danger ? ' danger' : ''}" style="flex:1;border-color:${danger ? 'rgba(255,80,80,0.4)' : 'var(--accent-border)'};color:${danger ? 'var(--red)' : 'var(--accent)'}">${esc(confirmText)}</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    const finish = value => {
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+      resolve(value);
+    };
+    const onKey = e => {
+      if (e.key === 'Escape') finish(false);
+      if (e.key === 'Enter') finish(true);
+    };
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) finish(false);
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      finish(btn.dataset.action === 'confirm');
+    });
+    document.addEventListener('keydown', onKey);
+  });
+}
+
 async function appRestart() {
+  const ok = await _confirmAction({
+    title: 'Restart ADS-B app?',
+    message: 'The ADS-B app service will restart. The page will reload automatically.',
+    confirmText: 'Restart',
+  });
+  if (!ok) return;
   _showSplash('ADS-B restarting…');
   try { await fetch('/api/system/restart', { method: 'POST' }); } catch(e) {}
   setTimeout(() => location.reload(), 4000);
 }
 
 async function appShutdown() {
-  if (!confirm('Stop ADS-B app? Start it back from the Dashboard.')) return;
+  const ok = await _confirmAction({
+    title: 'Shut down ADS-B app?',
+    message: 'The ADS-B app service will stop. Start it back up from the Dashboard.',
+    confirmText: 'Shut down',
+    danger: true,
+  });
+  if (!ok) return;
   _showSplash('ADS-B offline. Start it back up from the Dashboard.');
   try { await fetch('/api/system/shutdown', { method: 'POST' }); } catch(e) {}
 }
