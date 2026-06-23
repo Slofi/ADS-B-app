@@ -95,7 +95,10 @@ def _load_receiver_config():
     try:
         with open(RECEIVER_CONFIG_FILE) as f:
             d = json.load(f)
-        if d.get('source') == 'manual':
+        source = d.get('source', 'auto')
+        if source in ('opstoc', 'om'):
+            _gps_source = source
+        elif source == 'manual':
             lat = d.get('lat')
             lon = d.get('lon')
             if lat is not None and lon is not None:
