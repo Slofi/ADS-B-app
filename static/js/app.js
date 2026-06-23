@@ -753,10 +753,17 @@ async function updateApp() {
   } catch(e) {}
 }
 
-function _showSplash(msg) {
+function _showSplash(msg, {cmd = null, dashboard = false} = {}) {
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const d = document.createElement('div');
-  d.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;font-size:1rem;color:#555;letter-spacing:0.05em;font-family:system-ui,sans-serif';
-  d.textContent = msg;
+  d.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif';
+  const cmdHtml = cmd ? `<div style="font-size:0.78rem;color:#555;margin-bottom:6px">Or run:</div><code onclick="navigator.clipboard.writeText(this.textContent)" title="Click to copy" style="display:inline-block;font-size:0.78rem;background:#111722;border:1px solid rgba(255,255,255,0.08);padding:6px 14px;border-radius:8px;cursor:pointer;user-select:all;color:#aaa">${cmd}</code>` : '';
+  const dashHtml = dashboard ? '<div style="font-size:0.78rem;color:#555;margin-top:14px">Or launch from the Dashboard.</div>' : '';
+  d.innerHTML = `<div style="text-align:center;padding:32px;max-width:440px">
+    <div style="font-size:clamp(2.5rem,8vw,5.5rem);font-weight:700;color:var(--accent);letter-spacing:0.04em;line-height:1;margin-bottom:28px">ADS-B</div>
+    <div style="font-size:0.95rem;color:#ccc;letter-spacing:0.04em;margin-bottom:${cmd ? '18px' : '0'}">${esc(msg)}</div>
+    ${cmdHtml}${dashHtml}
+  </div>`;
   document.body.appendChild(d);
 }
 
@@ -803,7 +810,7 @@ async function appRestart() {
     confirmText: 'Restart',
   });
   if (!ok) return;
-  _showSplash('ADS-B restarting…');
+  _showSplash('Restarting…');
   try { await fetch('/api/system/restart', { method: 'POST' }); } catch(e) {}
   setTimeout(() => location.reload(), 4000);
 }
@@ -816,7 +823,7 @@ async function appShutdown() {
     danger: true,
   });
   if (!ok) return;
-  _showSplash('ADS-B offline. Start it back up from the Dashboard.');
+  _showSplash('ADS-B stopped.', {cmd: 'systemctl --user start adsb-app', dashboard: true});
   try { await fetch('/api/system/shutdown', { method: 'POST' }); } catch(e) {}
 }
 
