@@ -39,6 +39,6 @@ WantedBy=default.target
 EOF
 
 systemctl --user daemon-reload
-systemctl --user enable adsb-app
+# not enabled at boot — started on demand via Dashboard
 systemctl --user start adsb-app
 echo "=== Done — http://localhost:5400 ==="
