@@ -279,3 +279,36 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   50%       { filter: drop-shadow(0 0 10px #ff2222); }
 }
 .emerg-icon { animation: emerg-pulse 0.8s ease-in-out infinite; }
+
+/* ── Service splash ──────────────────────────────────────────────── */
+@keyframes ss-fadein{from{opacity:0}to{opacity:1}}
+@keyframes ss-dot-pulse{0%,100%{transform:scale(.5);opacity:.2}50%{transform:scale(1);opacity:1}}
+@keyframes ss-radar-rot{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.service-splash{position:fixed;inset:0;z-index:10000;background:var(--bg);background-image:repeating-linear-gradient(0deg,transparent 0,transparent 3px,rgba(0,0,0,.05) 3px,rgba(0,0,0,.05) 4px);display:grid;place-items:center;animation:ss-fadein .35s ease}
+.service-splash[hidden]{display:none!important}
+.ss-panel{display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 24px}
+.ss-wordmark{font-size:1.5rem;font-weight:700;letter-spacing:.12em;color:var(--accent);line-height:1;margin-bottom:6px}
+.ss-tagline{font-size:.7rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:28px}
+.ss-status-wrap{margin-bottom:18px}
+.ss-status{font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.ss-anim{margin-bottom:20px}
+.ss-dots{display:flex;gap:8px}
+.ss-dot{width:6px;height:6px;border-radius:50%;animation:ss-dot-pulse 1.2s ease-in-out infinite}
+.ss-dot:nth-child(2){animation-delay:.22s}
+.ss-dot:nth-child(3){animation-delay:.44s}
+.ss-dot:nth-child(4){animation-delay:.66s}
+.service-splash[data-mode="shutdown"] .ss-dot{background:var(--red)}
+.service-splash[data-mode="restart"]  .ss-dot{background:var(--accent)}
+.service-splash[data-mode="shutdown"] .ss-txt-restart{display:none}
+.service-splash[data-mode="restart"]  .ss-txt-shutdown{display:none}
+.service-splash[data-mode="restart"] .ss-hint{visibility:hidden}
+.ss-hint{text-align:center}
+.ss-hint-label{font-size:.65rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.ss-hint-cmd{display:inline-block;font-size:.72rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);padding:5px 12px;border-radius:6px;cursor:pointer;user-select:all;color:var(--accent);font-family:monospace;letter-spacing:.03em}
+/* ADS-B: rotating radar sweep */
+.ss-radar{position:relative;width:56px;height:56px;margin-bottom:22px}
+.ss-radar-ring{position:absolute;inset:0;border:1px solid var(--accent);border-radius:50%;opacity:0.2}
+.ss-radar-line{position:absolute;top:50%;left:50%;width:46%;height:1.5px;background:linear-gradient(90deg,var(--accent),transparent);transform-origin:0 50%;animation:ss-radar-rot 2s linear infinite}
+.ss-radar-dot{position:absolute;width:5px;height:5px;background:var(--accent);border-radius:50%;top:18%;left:62%;box-shadow:0 0 6px var(--accent);opacity:0.8}
+@media(prefers-reduced-motion:reduce){.ss-dot,.ss-radar-line{animation:none}}
+.service-splash[data-mode="shutdown"] .ss-anim{display:none}
