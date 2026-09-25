@@ -1,1 +1,5 @@
 adsb-app.md
+# Project overview card (Syncthing-delivered) - keep on disk, never commit, never delete
+adsb-app-overview.md
+# Leaflet is downloaded at startup by app.py::_ensure_leaflet() (templates fall back to unpkg)
+static/lib/
