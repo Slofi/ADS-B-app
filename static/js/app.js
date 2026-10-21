@@ -650,7 +650,7 @@ async function poll() {
     }
 
     // Status bar
-    el('d1090-dot').className = 'status-dot ' + (d.dump1090_running ? 'on' : 'off');
+    renderSdr(d.sdr);
     const startBtn = el('d1090-start-btn');
     if (startBtn) {
       startBtn.classList.toggle('active', d.dump1090_running);
@@ -998,3 +998,12 @@ function updateClock() {
   setInterval(updateClock, 1000);
   poll();
 })();
+
+// S466: RTL-SDR indicator — same states/colours in ADS-B, AIS, Sonde and Casper
+function renderSdr(sdr) {
+  if (!sdr) return;
+  const dot = { ok: 'on', missing: 'off', busy: 'off', stalled: 'off', starting: 'warn', idle: '' }[sdr.state] ?? '';
+  el('sdr-dot').className = 'status-dot ' + dot;
+  el('sdr-pill').className = 'sdr-pill ' + (sdr.state === 'ok' ? 'ok' : dot === 'off' ? 'bad' : '');
+  el('sdr-text').textContent = sdr.text;
+}

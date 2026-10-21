@@ -12,6 +12,8 @@ from datetime import datetime
 
 from flask import Flask, jsonify, render_template, request
 
+import rtlsdr_status   # S466: shared RTL-SDR indicator helpers (canonical copy: cyberdeck/launcher)
+
 app = Flask(__name__)
 
 BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
@@ -22,6 +24,7 @@ APP_VERSION   = '2026.06.17'
 # ---------------------------------------------------------------------------
 AIRCRAFT_JSON   = '/run/dump1090-mutability/aircraft.json'
 RECEIVER_JSON   = '/run/dump1090-mutability/receiver.json'
+STATS_JSON      = '/run/dump1090-mutability/stats.json'
 DB_FILE              = '/home/slofi/intercept/data/adsb/aircraft_db.json'
 DB_META_FILE         = '/home/slofi/intercept/data/adsb/aircraft_db_meta.json'
 RECEIVER_CONFIG_FILE = '/home/slofi/intercept/data/adsb/receiver_config.json'
@@ -35,6 +38,11 @@ POLL_INTERVAL   = 1.0    # seconds between aircraft.json reads
 GONE_TIMEOUT    = 60.0   # seconds before gone aircraft moves to history
 MAX_TRACK_PTS   = 300    # max stored track points per aircraft
 MAX_HISTORY     = 50     # max history entries (oldest dropped)
+
+SDR_POLL_INTERVAL = 3.0   # RTL-SDR indicator refresh
+SDR_START_GRACE   = 75.0  # dump1090 writes stats.json once a minute
+SDR_STATS_STALE   = 90.0  # last1min older than this = dump1090 stopped delivering
+SDR_SAMPLE_RATE   = 2.4e6 # dump1090-mutability's fixed rate (measured S466: ~144 M samples/min)
 
 GPS_POLL_INTERVAL = 5.0
 GPS_OPSTOC_URL    = 'http://localhost:8090/api/gps'
@@ -52,6 +60,9 @@ _receiver         = {}   # {lat, lon, version} — from dump1090
 _manual_receiver  = None # {lat, lon} — overrides dump1090 when set
 _gps_source       = 'auto'  # 'auto' | 'opstoc' | 'om' | 'manual'
 _gps_status       = {}       # {sats, fix, alt} from external GPS source
+_sdr              = rtlsdr_status.result('starting', 'SDR checking…')  # S466 indicator
+_sdr_missing_at   = 0.0     # first time the dongle was seen missing (0 = not since start)
+_sdr_missing_msgs = None    # dump1090's total message counter at that moment
 
 _db_aircraft:  dict = {}
 _db_types:     dict = {}
@@ -213,6 +224,73 @@ def _is_dump1090_running() -> bool:
         capture_output=True, text=True
     )
     return r.stdout.strip() == 'active'
+
+def _dump1090_uptime():
+    """Seconds since dump1090-mutability became active, None if unknown."""
+    r = subprocess.run(['systemctl', 'show', 'dump1090-mutability', '-p',
+                        'ActiveEnterTimestampMonotonic', '--value'], capture_output=True, text=True)
+    try:
+        us = int(r.stdout.strip())
+    except ValueError:
+        return None
+    return time.monotonic() - us / 1e6 if us else None
+
+def _sdr_health() -> dict:
+    """S466: RTL-SDR indicator — plugged in? held by dump1090? samples flowing?"""
+    global _sdr_missing_at, _sdr_missing_msgs
+    R = rtlsdr_status.result
+    if not rtlsdr_status.present():
+        if not _sdr_missing_at:
+            _sdr_missing_at, _sdr_missing_msgs = time.time(), _dump1090_msgs()
+        return R('missing', 'RTL-SDR not connected')
+    if not _is_dump1090_running():
+        return rtlsdr_status.not_running(('dump1090',))
+    up = _dump1090_uptime()
+    starting = up is not None and up < SDR_START_GRACE
+    try:
+        with open(STATS_JSON) as f:
+            last = json.load(f)['last1min']
+        start, end = last['start'], last['end']
+        samples = last['local']['samples_processed']
+        msgs = last.get('messages', 0)
+    except (OSError, ValueError, KeyError, TypeError):
+        return R('starting', 'SDR starting…') if starting else R('stalled', 'SDR not responding · no dump1090 stats')
+    now = time.time()
+    if up is not None and end < now - up:          # stats are from before this dump1090 start
+        return R('starting', 'SDR starting…') if starting else R('stalled', 'SDR not responding · no stats since start')
+    if now - end > SDR_STATS_STALE:
+        return R('stalled', f'SDR not responding · stats {int(now - end)} s old')
+    if samples <= 0:
+        return R('stalled', 'SDR not responding · no samples')
+    # Unplug test S466: right after a replug the newest stats minute still holds samples from
+    # BEFORE the unplug, so green needs proof of NEW samples — any one of:
+    #   a stats minute that started after the unplug · more samples than the pre-unplug part of
+    #   the minute could hold · a message decoded after the unplug (aircraft.json, every 1 s)
+    if _sdr_missing_at:
+        pre_max = max(0.0, _sdr_missing_at - start) * SDR_SAMPLE_RATE * 1.05
+        m = _dump1090_msgs()
+        if not (start >= _sdr_missing_at or samples > pre_max
+                or (m is not None and _sdr_missing_msgs is not None and m > _sdr_missing_msgs)):
+            return R('starting', 'SDR reconnected · waiting for samples')
+        _sdr_missing_at, _sdr_missing_msgs = 0.0, None
+    return R('ok', rtlsdr_status.traffic_text(msgs))
+
+def _dump1090_msgs():
+    """dump1090's running total of decoded messages (aircraft.json), None if unreadable."""
+    try:
+        with open(AIRCRAFT_JSON) as f:
+            return int(json.load(f)['messages'])
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+def _sdr_poll():
+    global _sdr
+    while True:
+        try:
+            _sdr = _sdr_health()
+        except Exception as exc:
+            _sdr = rtlsdr_status.result('stalled', f'SDR check failed: {exc}')
+        time.sleep(SDR_POLL_INTERVAL)
 
 def _new_aircraft(hex_code: str, now: float) -> dict:
     info = _db_lookup(hex_code)
@@ -388,6 +466,7 @@ def get_aircraft():
         'receiver':           _receiver,
         'effective_receiver': _manual_receiver or _receiver,
         'dump1090_running':   _is_dump1090_running(),
+        'sdr':                _sdr,
         'stats': {
             'active_count':  len(active),
             'history_count': len(history),
@@ -605,6 +684,7 @@ _load_db()
 _load_receiver_config()
 threading.Thread(target=_poll,       daemon=True).start()
 threading.Thread(target=_gps_poll,   daemon=True).start()
+threading.Thread(target=_sdr_poll,   daemon=True).start()
 threading.Thread(target=_ensure_leaflet, daemon=True).start()
 
 if __name__ == '__main__':
