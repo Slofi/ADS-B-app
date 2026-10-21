@@ -305,7 +305,16 @@ def _update_state():
                 if ac.get(fld) is not None:
                     obj[fld] = ac[fld]
 
-            obj['last_seen'] = now
+            # "Last seen" must be the last MESSAGE, not the last poll of the feed.
+            # dump1090's `seen` is the seconds since it last heard that aircraft;
+            # using `now` made every aircraft look 0 s old while it stayed in
+            # aircraft.json (up to ~60 s after its last message), and that stale
+            # age was shown in this app and in OPS-TOC's overlay popup.
+            try:
+                seen_age = float(ac.get('seen') or 0)
+            except (TypeError, ValueError):
+                seen_age = 0.0
+            obj['last_seen'] = now - max(0.0, seen_age)
             obj['gone']      = False
             obj['gone_at']   = None
             obj['emergency'] = obj.get('squawk') in EMERGENCY_SQUAWKS
