@@ -33,12 +33,13 @@ const ICON_DEFS = {
 const SIZE_SCALE = { L: 0.75, M: 1.0, H: 1.3, '': 1.0 };
 
 // ─── Altitude colours ────────────────────────────────────────────────────────
+// The label lives with the band so the map legend below cannot drift from the markers.
 const ALT_COLORS = [
-  { max: 0,     color: '#ff5533' },   // ground / very low
-  { max: 5000,  color: '#ff6633' },   // low
-  { max: 18000, color: '#f0c040' },   // medium
-  { max: 30000, color: '#9fda50' },   // high
-  { max: Infinity, color: '#3ddc84'}, // very high
+  { max: 0,        color: '#ff5533', label: 'Ground / below 0 ft' },   // ground / very low
+  { max: 5000,     color: '#ff6633', label: '0 – 5,000 ft' },          // low
+  { max: 18000,    color: '#f0c040', label: '5,000 – 18,000 ft' },     // medium
+  { max: 30000,    color: '#9fda50', label: '18,000 – 30,000 ft' },    // high
+  { max: Infinity, color: '#3ddc84', label: '30,000 ft +' },           // very high
 ];
 
 function altColor(altitude, isMilitary, emergency) {
@@ -86,6 +87,25 @@ const map = L.map('map', {
 });
 // Provider credits only; the Leaflet flag/wordmark is courtesy, not a licence term.
 map.attributionControl.setPrefix(false);
+
+// ─── Aircraft colour legend (bottom-left of the map) ─────────────────────────
+// Built from ALT_COLORS, so a band change moves here automatically; the three
+// special colours below match altColor().
+const legend = L.control({ position: 'bottomleft' });
+legend.onAdd = () => {
+  const div = L.DomUtil.create('div', 'map-legend');
+  const rows = [
+    ...ALT_COLORS.map(b => [b.label, b.color]),
+    ['Military', '#38bdf8'],
+    ['Emergency', '#ff2222'],
+    ['No altitude', '#7a8aaa'],
+  ];
+  div.innerHTML = `<div class="map-legend-title">Aircraft altitude</div>`
+    + rows.map(([label, color]) =>
+        `<div class="map-legend-row"><span class="map-legend-dot" style="background:${color}"></span>${label}</div>`).join('');
+  return div;
+};
+legend.addTo(map);
 
 // ─── Tile layers ─────────────────────────────────────────────────────────────
 // ⚠️ The four CARTO layers carry NO key here on purpose. CARTO requires an API key on the raster tile URL,
